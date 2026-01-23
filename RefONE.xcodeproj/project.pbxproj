@@ -6,20 +6,75 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		D4F02F532F088D12003E07B3 /* RefONE Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = D4F02F522F088D12003E07B3 /* RefONE Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		D4F02F542F088D12003E07B3 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D4F02F172F088CCE003E07B3 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D4F02F512F088D12003E07B3;
+			remoteInfo = "RefONE Watch App";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		D4F02F602F088D12003E07B3 /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				D4F02F532F088D12003E07B3 /* RefONE Watch App.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
-		D4F02F1F2F088CCE003E07B3 /* RefONE.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RefONE.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		D4F02F462F088D11003E07B3 /* RefONE.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RefONE.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		D4F02F522F088D12003E07B3 /* RefONE Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "RefONE Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		D4F02F9C2F095146003E07B3 /* Exceptions for "RefONE" folder in "RefONE Watch App" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				DatosCompartidos.swift,
+				GestorConectividad.swift,
+			);
+			target = D4F02F512F088D12003E07B3 /* RefONE Watch App */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		D4F02F212F088CCE003E07B3 /* RefONE */ = {
+		D4F02F472F088D11003E07B3 /* RefONE */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				D4F02F9C2F095146003E07B3 /* Exceptions for "RefONE" folder in "RefONE Watch App" target */,
+			);
 			path = RefONE;
+			sourceTree = "<group>";
+		};
+		D4F02F562F088D12003E07B3 /* RefONE Watch App */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "RefONE Watch App";
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		D4F02F1C2F088CCE003E07B3 /* Frameworks */ = {
+		D4F02F432F088D11003E07B3 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D4F02F4F2F088D12003E07B3 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -32,7 +87,8 @@
 		D4F02F162F088CCE003E07B3 = {
 			isa = PBXGroup;
 			children = (
-				D4F02F212F088CCE003E07B3 /* RefONE */,
+				D4F02F472F088D11003E07B3 /* RefONE */,
+				D4F02F562F088D12003E07B3 /* RefONE Watch App */,
 				D4F02F202F088CCE003E07B3 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -40,7 +96,8 @@
 		D4F02F202F088CCE003E07B3 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				D4F02F1F2F088CCE003E07B3 /* RefONE.app */,
+				D4F02F462F088D11003E07B3 /* RefONE.app */,
+				D4F02F522F088D12003E07B3 /* RefONE Watch App.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -48,26 +105,50 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		D4F02F1E2F088CCE003E07B3 /* RefONE */ = {
+		D4F02F452F088D11003E07B3 /* RefONE */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = D4F02F2C2F088CCF003E07B3 /* Build configuration list for PBXNativeTarget "RefONE" */;
+			buildConfigurationList = D4F02F612F088D12003E07B3 /* Build configuration list for PBXNativeTarget "RefONE" */;
 			buildPhases = (
-				D4F02F1B2F088CCE003E07B3 /* Sources */,
-				D4F02F1C2F088CCE003E07B3 /* Frameworks */,
-				D4F02F1D2F088CCE003E07B3 /* Resources */,
+				D4F02F422F088D11003E07B3 /* Sources */,
+				D4F02F432F088D11003E07B3 /* Frameworks */,
+				D4F02F442F088D11003E07B3 /* Resources */,
+				D4F02F602F088D12003E07B3 /* Embed Watch Content */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				D4F02F552F088D12003E07B3 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				D4F02F472F088D11003E07B3 /* RefONE */,
+			);
+			name = RefONE;
+			packageProductDependencies = (
+			);
+			productName = RefONE;
+			productReference = D4F02F462F088D11003E07B3 /* RefONE.app */;
+			productType = "com.apple.product-type.application";
+		};
+		D4F02F512F088D12003E07B3 /* RefONE Watch App */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D4F02F5D2F088D12003E07B3 /* Build configuration list for PBXNativeTarget "RefONE Watch App" */;
+			buildPhases = (
+				D4F02F4E2F088D12003E07B3 /* Sources */,
+				D4F02F4F2F088D12003E07B3 /* Frameworks */,
+				D4F02F502F088D12003E07B3 /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				D4F02F212F088CCE003E07B3 /* RefONE */,
+				D4F02F562F088D12003E07B3 /* RefONE Watch App */,
 			);
-			name = RefONE;
+			name = "RefONE Watch App";
 			packageProductDependencies = (
 			);
-			productName = RefONE;
-			productReference = D4F02F1F2F088CCE003E07B3 /* RefONE.app */;
+			productName = "RefONE Watch App";
+			productReference = D4F02F522F088D12003E07B3 /* RefONE Watch App.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -80,7 +161,10 @@
 				LastSwiftUpdateCheck = 2620;
 				LastUpgradeCheck = 2620;
 				TargetAttributes = {
-					D4F02F1E2F088CCE003E07B3 = {
+					D4F02F452F088D11003E07B3 = {
+						CreatedOnToolsVersion = 26.2;
+					};
+					D4F02F512F088D12003E07B3 = {
 						CreatedOnToolsVersion = 26.2;
 					};
 				};
@@ -99,13 +183,21 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				D4F02F1E2F088CCE003E07B3 /* RefONE */,
+				D4F02F452F088D11003E07B3 /* RefONE */,
+				D4F02F512F088D12003E07B3 /* RefONE Watch App */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		D4F02F1D2F088CCE003E07B3 /* Resources */ = {
+		D4F02F442F088D11003E07B3 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D4F02F502F088D12003E07B3 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -115,7 +207,14 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		D4F02F1B2F088CCE003E07B3 /* Sources */ = {
+		D4F02F422F088D11003E07B3 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D4F02F4E2F088D12003E07B3 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -123,6 +222,14 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		D4F02F552F088D12003E07B3 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D4F02F512F088D12003E07B3 /* RefONE Watch App */;
+			targetProxy = D4F02F542F088D12003E07B3 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		D4F02F2A2F088CCF003E07B3 /* Debug */ = {
@@ -178,6 +285,8 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				INFOPLIST_KEY_NSLocationUsageDescription = "";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
@@ -236,6 +345,8 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				INFOPLIST_KEY_NSLocationUsageDescription = "";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = NO;
@@ -246,21 +357,107 @@
 			};
 			name = Release;
 		};
-		D4F02F2D2F088CCF003E07B3 /* Debug */ = {
+		D4F02F5E2F088D12003E07B3 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "RefONE Watch App/RefONE Watch App.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 4Z2XB8895C;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "RefONE-Watch-App-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = RefONE;
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "RefONE necesita acceso a tus datos de salud.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "RefONE necesita acceso a tus datos de salud.";
+				INFOPLIST_KEY_NSLocationUsageDescription = "";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "RefONE necesita acceso a tu ubicación durante el partido.";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = rdrw.RefONE;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = rdrw.RefONE.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 9.6;
+			};
+			name = Debug;
+		};
+		D4F02F5F2F088D12003E07B3 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "RefONE Watch App/RefONE Watch App.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 4Z2XB8895C;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "RefONE-Watch-App-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = RefONE;
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "RefONE necesita acceso a tus datos de salud.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "RefONE necesita acceso a tus datos de salud.";
+				INFOPLIST_KEY_NSLocationUsageDescription = "";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "RefONE necesita acceso a tu ubicación durante el partido.";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = rdrw.RefONE;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = rdrw.RefONE.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 9.6;
+			};
+			name = Release;
+		};
+		D4F02F622F088D12003E07B3 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = RefONE/RefONE.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 4Z2XB8895C;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = RefONE;
+				INFOPLIST_KEY_NSHealthClinicalHealthRecordsShareUsageDescription = "Necesario para generar el mapa de calor de tu movimiento en el campo.";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "Necesario para guardar tu actividad física durante el partido.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Necesario para guardar el entrenamiento del partido.";
+				INFOPLIST_KEY_NSLocationUsageDescription = "";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Necesitamos usar tu ubicación durante el partido.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -278,21 +475,29 @@
 			};
 			name = Debug;
 		};
-		D4F02F2E2F088CCF003E07B3 /* Release */ = {
+		D4F02F632F088D12003E07B3 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = RefONE/RefONE.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 4Z2XB8895C;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = RefONE;
+				INFOPLIST_KEY_NSHealthClinicalHealthRecordsShareUsageDescription = "Necesario para generar el mapa de calor de tu movimiento en el campo.";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "Necesario para guardar tu actividad física durante el partido.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Necesario para guardar el entrenamiento del partido.";
+				INFOPLIST_KEY_NSLocationUsageDescription = "";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Necesitamos usar tu ubicación durante el partido.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -322,11 +527,20 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		D4F02F2C2F088CCF003E07B3 /* Build configuration list for PBXNativeTarget "RefONE" */ = {
+		D4F02F5D2F088D12003E07B3 /* Build configuration list for PBXNativeTarget "RefONE Watch App" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				D4F02F2D2F088CCF003E07B3 /* Debug */,
-				D4F02F2E2F088CCF003E07B3 /* Release */,
+				D4F02F5E2F088D12003E07B3 /* Debug */,
+				D4F02F5F2F088D12003E07B3 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D4F02F612F088D12003E07B3 /* Build configuration list for PBXNativeTarget "RefONE" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D4F02F622F088D12003E07B3 /* Debug */,
+				D4F02F632F088D12003E07B3 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

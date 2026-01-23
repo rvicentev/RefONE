@@ -1,24 +1,23 @@
-//
-//  ContentView.swift
-//  RefONE Watch App
-//
-//  Created by Rodri on 3/1/26.
-//
-
 import SwiftUI
 
 struct ContentView: View {
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        NavigationStack {
+            VStack(spacing: 20) {
+                Text("RefONE")
+                    .font(.title2)
+                    .bold()
+                    .foregroundStyle(.orange)
+                
+                NavigationLink(destination: ListaPartidosWatchView()) {
+                    HStack {
+                        Image(systemName: "whistle")
+                        Text("Partidos")
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.orange)
+            }
         }
-        .padding()
     }
-}
-
-#Preview {
-    ContentView()
 }

@@ -1,32 +1,49 @@
-//
-//  RefONEApp.swift
-//  RefONE
-//
-//  Created by Rodri on 3/1/26.
-//
-
 import SwiftUI
 import SwiftData
 
 @main
 struct RefONEApp: App {
-    var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
-            Item.self,
-        ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-
-        do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
-        } catch {
-            fatalError("Could not create ModelContainer: \(error)")
-        }
-    }()
+    init() {
+        _ = GestorConectividad.shared
+    }
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            TabView {
+                // Pestaña 1: Inicio
+                InicioView()
+                    .tabItem {
+                        Label("Inicio", systemImage: "house.fill")
+                    }
+                
+                // Pestaña 2: Partidos
+                NavigationStack {
+                    ListaPartidosView()
+                }
+                .tabItem {
+                    Label("Partidos", systemImage: "soccerball")
+                }
+                
+                // Pestaña 3: Estadísticas (Placeholder)
+                EstadisticasView()
+                    .tabItem {
+                        Label("Estadísticas", systemImage: "chart.bar.xaxis")
+                    }
+                
+                // Pestaña 4: Configuración
+                ConfiguracionView()
+                    .tabItem {
+                        Label("Configuración", systemImage: "gearshape.fill")
+                    }
+            }
+            // Color de acento global (Naranja RefONE)
+            .tint(.orange)
         }
-        .modelContainer(sharedModelContainer)
+        .modelContainer(for: [
+            Categoria.self,
+            Equipo.self,
+            Estadio.self,
+            Partido.self
+        ])
     }
 }
