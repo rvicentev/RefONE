@@ -1,36 +1,35 @@
 import SwiftUI
 import SwiftData
 
-// NOTA: No definimos 'enum RolArbitro' aquí porque ya está en Modelos.swift
-
 struct FormularioPartidoView: View {
+    // Contexto y Navegación
     @Environment(\.modelContext) private var contexto
     @Environment(\.dismiss) private var cerrar
     
-    // Consultas
+    // Consultas de Persistencia
     @Query(sort: \Equipo.nombre) private var equipos: [Equipo]
     @Query(sort: \Categoria.nombre) private var categorias: [Categoria]
     
-    // Variables de Estado
+    // Estado del Formulario
     @State private var local: Equipo?
     @State private var visitante: Equipo?
     @State private var categoria: Categoria?
     @State private var fecha: Date = Date()
     @State private var desplazamiento: Double = 0.0
+    
+    // Configuración Visual
     @State private var colorLocalOverride: Color = .black
     @State private var colorVisitanteOverride: Color = .white
     @State private var usarColoresPersonalizados = false
     
-    // Usamos el Enum para la UI
+    // Lógica de Negocio
     @State private var rol: RolArbitro = .principal
     
     var body: some View {
         NavigationStack {
             Form {
-                // --- SECCIÓN 1: DATOS ---
+                // MARK: Configuración del Encuentro
                 Section("Detalles del Encuentro") {
-                    
-                    // SELECTOR DE CATEGORÍA
                     Picker("Categoría", selection: $categoria) {
                         Text("Seleccionar").tag(nil as Categoria?)
                         ForEach(categorias) { cat in
@@ -38,7 +37,6 @@ struct FormularioPartidoView: View {
                         }
                     }
                     .onChange(of: categoria) {
-                        // Lógica: Si cambiamos a una categoría que NO permite asistente, forzamos Principal
                         if let cat = categoria, !cat.permiteAsistente {
                             rol = .principal
                         }
@@ -46,9 +44,7 @@ struct FormularioPartidoView: View {
                     
                     DatePicker("Fecha y Hora", selection: $fecha)
                     
-                    // LÓGICA CONDICIONAL DEL ROL
                     if let cat = categoria, cat.permiteAsistente {
-                        // Si permite asistente, dejamos elegir
                         Picker("Tu Rol", selection: $rol) {
                             ForEach(RolArbitro.allCases) { role in
                                 Text(role.rawValue).tag(role)
@@ -56,27 +52,26 @@ struct FormularioPartidoView: View {
                         }
                         .pickerStyle(.segmented)
                     } else {
-                        // Si no permite, mostramos texto fijo
                         HStack {
-                            Text("Tu Rol")
+                            Text("Actuando de:")
                             Spacer()
-                            Text("Principal (Fijo)")
+                            Text("Principal")
                                 .foregroundStyle(.secondary)
                                 .italic()
                         }
                     }
                 }
                 
-                // --- SECCIÓN 2: EQUIPOS ---
+                // MARK: Selección de Equipos
                 Section("Equipos") {
-                    Picker("Equipo Local", selection: $local) {
+                    Picker("Local", selection: $local) {
                         Text("Seleccionar").tag(nil as Equipo?)
                         ForEach(equipos) { equipo in
                             Text(equipo.nombre).tag(equipo as Equipo?)
                         }
                     }
                     
-                    Picker("Equipo Visitante", selection: $visitante) {
+                    Picker("Visitante", selection: $visitante) {
                         Text("Seleccionar").tag(nil as Equipo?)
                         ForEach(equipos) { equipo in
                             if equipo != local {
@@ -86,16 +81,18 @@ struct FormularioPartidoView: View {
                     }
                 }
                 
-                Section("Económico") {
+                // MARK: Datos Económicos
+                Section("Dietas") {
                     HStack {
-                        Text("Desplazamiento (€)")
+                        Text("Desplazamiento: ")
                         TextField("0.0", value: $desplazamiento, format: .currency(code: "EUR"))
                             .keyboardType(.decimalPad)
                     }
                 }
                 
-                Section("Equipaciones Hoy") {
-                    Toggle("Personalizar Colores", isOn: $usarColoresPersonalizados)
+                // MARK: Personalización Visual
+                Section("Color de las equipaciones") {
+                    Toggle("Personalizar", isOn: $usarColoresPersonalizados)
                     
                     if usarColoresPersonalizados {
                         ColorPicker("Color Local", selection: $colorLocalOverride)
@@ -103,7 +100,7 @@ struct FormularioPartidoView: View {
                     }
                 }
                 
-                // --- SECCIÓN 3: PREVISUALIZACIÓN ---
+                // MARK: Live Preview
                 Section {
                     VStack(spacing: 15) {
                         Text("VISTA PREVIA")
@@ -112,7 +109,7 @@ struct FormularioPartidoView: View {
                             .foregroundStyle(.secondary)
                         
                         HStack(alignment: .center, spacing: 20) {
-                            // Círculo Local
+                            // Renderizado Local
                             VStack {
                                 ImagenEscudoGrande(data: local?.escudoData)
                                 Rectangle()
@@ -126,7 +123,7 @@ struct FormularioPartidoView: View {
                                 .italic()
                                 .foregroundStyle(.secondary)
                             
-                            // Círculo Visitante
+                            // Renderizado Visitante
                             VStack {
                                 ImagenEscudoGrande(data: visitante?.escudoData)
                                 Rectangle()
@@ -142,7 +139,6 @@ struct FormularioPartidoView: View {
                             Text(categoria?.nombre ?? "Categoría")
                                 .font(.headline)
                             
-                            // MOSTRAR EL ROL ELEGIDO
                             Text(rol.rawValue.uppercased())
                                 .font(.caption2)
                                 .bold()
@@ -182,13 +178,15 @@ struct FormularioPartidoView: View {
         }
     }
     
+    // MARK: - Persistencia y Sincronización
+    
     private func guardar() {
-        // 1. Validaciones básicas
+        // Validación de nulabilidad
         guard let cat = categoria, let eqLocal = local, let eqVisitante = visitante else { return }
+        
         let esPrincipal = (rol == .principal)
         
-        // 2. Crear objeto Partido en base de datos (iPhone)
-        // Usamos el nuevo campo 'costeDesplazamiento'
+        // Instancia del modelo persistente
         let nuevoPartido = Partido(
             fecha: fecha,
             equipoLocal: eqLocal,
@@ -198,36 +196,36 @@ struct FormularioPartidoView: View {
             costeDesplazamiento: desplazamiento
         )
         
-        // 3. Guardar colores personalizados si se activaron
+        // Aplicación de overrides visuales
         if usarColoresPersonalizados {
             nuevoPartido.colorLocalHexPartido = colorLocalOverride.toHex() ?? "#000000"
             nuevoPartido.colorVisitanteHexPartido = colorVisitanteOverride.toHex() ?? "#FFFFFF"
         }
         
-        // 4. Insertar en SwiftData
         contexto.insert(nuevoPartido)
         
         do {
             try contexto.save()
-            
-            // --- ENVÍO AL RELOJ ⌚️ ---
-            
-            // A. Buscamos TODOS los partidos pendientes en la base de datos
+            sincronizarConWatch()
+            cerrar()
+        } catch {
+            print("Error critico guardando partido: \(error)")
+        }
+    }
+    
+    private func sincronizarConWatch() {
+        do {
             let descriptor = FetchDescriptor<Partido>(
                 predicate: #Predicate { $0.finalizado == false },
                 sortBy: [SortDescriptor(\.fecha)]
             )
             let partidosPendientes = try contexto.fetch(descriptor)
             
-            // B. CONVERSIÓN: [Partido] -> [PartidoReloj]
-            // Mapeamos usando EXACTAMENTE los campos de tu struct PartidoReloj
+            // Mapping de DTO para WatchConnectivity
             let listaParaReloj = partidosPendientes.map { p in
-                
-                // Lógica de colores: Prioridad al color personalizado del partido, si no, el del equipo
                 let colorL = !p.colorLocalHexPartido.isEmpty ? p.colorLocalHexPartido : (p.equipoLocal?.colorHex ?? "#000000")
                 let colorV = !p.colorVisitanteHexPartido.isEmpty ? p.colorVisitanteHexPartido : (p.equipoVisitante?.colorVisitanteHex ?? "#FFFFFF")
                 
-                // Creamos el struct que me has pasado en DatosCompartidos
                 return PartidoReloj(
                     id: p.id,
                     equipoLocal: p.equipoLocal?.nombre ?? "Local",
@@ -244,8 +242,6 @@ struct FormularioPartidoView: View {
                     fecha: p.fecha,
                     categoria: p.categoria?.nombre ?? "General",
                     
-                    // NOTA: Asumo que tu modelo Categoria tiene estos campos.
-                    // Si no los tiene, cambia p.categoria?.duracionParte por 45
                     duracionParteMinutos: p.categoria?.duracionParteMinutos ?? 45,
                     duracionDescansoMinutos: p.categoria?.duracionDescansoMinutos ?? 15,
                     
@@ -253,24 +249,18 @@ struct FormularioPartidoView: View {
                 )
             }
             
-            // C. ENVIAR
-            // Tu función se llama 'enviarPartidosAlReloj(_ partidos: ...)' (con guion bajo),
-            // así que NO hay que poner la etiqueta 'partidos:' al llamar.
             GestorConectividad.shared.enviarPartidosAlReloj(listaParaReloj)
             
-            // --------------------------------
-            
-            print("✅ Partido guardado y enviado. Colores usados: L(\(usarColoresPersonalizados ? "Personalizado" : "Original"))")
-            cerrar()
-            
         } catch {
-            print("❌ Error al guardar partido: \(error)")
+            print("Error en sincronizacion WatchConnectivity: \(error)")
         }
     }
     
-    // Helper para escudo grande en preview
+    // MARK: - Subvistas
+    
     struct ImagenEscudoGrande: View {
         let data: Data?
+        
         var body: some View {
             if let data = data, let uiImage = UIImage(data: data) {
                 Image(uiImage: uiImage)
@@ -283,7 +273,11 @@ struct FormularioPartidoView: View {
                 Circle()
                     .fill(Color.gray.opacity(0.1))
                     .frame(width: 70, height: 70)
-                    .overlay(Image(systemName: "shield.fill").font(.largeTitle).foregroundStyle(.gray.opacity(0.3)))
+                    .overlay(
+                        Image(systemName: "shield.fill")
+                            .font(.largeTitle)
+                            .foregroundStyle(.gray.opacity(0.3))
+                    )
             }
         }
     }

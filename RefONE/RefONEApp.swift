@@ -3,6 +3,7 @@ import SwiftData
 
 @main
 struct RefONEApp: App {
+    // Lifecycle & Services Init
     init() {
         _ = GestorConectividad.shared
     }
@@ -10,13 +11,13 @@ struct RefONEApp: App {
     var body: some Scene {
         WindowGroup {
             TabView {
-                // Pestaña 1: Inicio
+                // MARK: Tab 1 - Dashboard
                 InicioView()
                     .tabItem {
                         Label("Inicio", systemImage: "house.fill")
                     }
                 
-                // Pestaña 2: Partidos
+                // MARK: Tab 2 - Matches
                 NavigationStack {
                     ListaPartidosView()
                 }
@@ -24,21 +25,21 @@ struct RefONEApp: App {
                     Label("Partidos", systemImage: "soccerball")
                 }
                 
-                // Pestaña 3: Estadísticas (Placeholder)
+                // MARK: Tab 3 - Analytics
                 EstadisticasView()
                     .tabItem {
                         Label("Estadísticas", systemImage: "chart.bar.xaxis")
                     }
                 
-                // Pestaña 4: Configuración
+                // MARK: Tab 4 - Settings
                 ConfiguracionView()
                     .tabItem {
                         Label("Configuración", systemImage: "gearshape.fill")
                     }
             }
-            // Color de acento global (Naranja RefONE)
             .tint(.orange)
         }
+        // Data Container Injection
         .modelContainer(for: [
             Categoria.self,
             Equipo.self,

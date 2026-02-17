@@ -3,7 +3,8 @@ import WatchKit
 import WatchConnectivity
 import Combine
 
-// MARK: - GESTOR DE CRONÓMETRO (LÓGICA MATEMÁTICA)
+// MARK: - Time Tracking Engine
+
 class CronometroManager: ObservableObject {
     @Published var tiempoMostrado: TimeInterval = 0
     @Published var estaCorriendo = false
@@ -16,7 +17,8 @@ class CronometroManager: ObservableObject {
         guard !estaCorriendo else { return }
         fechaInicioTramo = Date()
         estaCorriendo = true
-        // El timer aquí solo sirve para refrescar la UI, no para calcular
+        
+        // Loop for UI refresh only; precise calculation relies on Date diffs
         timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { _ in
             self.calcularTiempoActual()
         }
@@ -45,47 +47,46 @@ class CronometroManager: ObservableObject {
     }
 }
 
-// MARK: - ENUM ESTADOS
+// MARK: - State Definitions
+
 enum EstadoPartido {
     case previa, primeraParte, descanso, segundaParte, finalizado
 }
 
-// MARK: - VISTA PRINCIPAL
+// MARK: - Main Watch View
+
 struct VistaJuegoActivo: View {
     @Environment(\.dismiss) var dismiss
     let partido: PartidoReloj
     
-    // HEALTHKIT
+    // Services
     @StateObject private var healthKit = GestorHealthKit.shared
-    
-    // NUEVOS GESTORES DE TIEMPO (Sustituyen a los contadores manuales)
     @StateObject private var cronoJuego = CronometroManager()
     @StateObject private var cronoDescanso = CronometroManager()
     
-    // ESTADOS
+    // Game State
     @State private var estado: EstadoPartido = .previa
     @State private var workoutIDFinal: UUID? = nil
     
-    // VIBRACIÓN
+    // Haptics & Events
     @State private var contadorPausa: Int = 0
     @State private var contadorExcesoDescanso: Int = 0
     
-    // MARCADOR
+    // Scoreboard
     @State private var golesLocal = 0
     @State private var golesVisitante = 0
     
-    // UI FEEDBACK
+    // UI Feedback
     @State private var colorParpadeo: Color = .white
     @State private var mostrarGolOverlay = false
     @State private var nombreEquipoGol: String = ""
     @State private var colorEquipoGol: Color = .black
     @State private var minutoGol: Int = 0
     
-    // CÁLCULOS
+    // Computed Metrics
     var duracionParteSegundos: Double { Double(partido.duracionParteMinutos * 60) }
     var duracionDescansoSegundos: Double { Double(partido.duracionDescansoMinutos * 60) }
     
-    // Helpers para adaptar tu código anterior a los nuevos gestores
     var segundosTranscurridos: Int { Int(cronoJuego.tiempoMostrado) }
     var segundosDescanso: Int { Int(cronoDescanso.tiempoMostrado) }
     var cronometroCorriendo: Bool { cronoJuego.estaCorriendo }
@@ -94,7 +95,6 @@ struct VistaJuegoActivo: View {
         return cronoJuego.tiempoMostrado >= duracionParteSegundos
     }
     
-    // Tiempo total (Para la lógica de la 2a parte)
     var tiempoTotalJuego: Int {
         return Int(duracionParteSegundos) + segundosTranscurridos
     }
@@ -111,22 +111,24 @@ struct VistaJuegoActivo: View {
                         onCerrar: { dismiss() }
                     )
                 } else {
-                    // 1. CABECERA
+                    // Header
                     Text(partido.categoria.uppercased())
                         .font(.system(size: 10, weight: .bold))
                         .foregroundStyle(.orange)
                         .padding(.top, 25)
                         .padding(.bottom, 2)
                     
-                    // 2. MARCADOR
+                    // Scoreboard
                     HStack(alignment: .center, spacing: 6) {
                         Rectangle()
                             .fill(partido.colorLocalHex.toColorWatch())
                             .frame(width: 4, height: 22)
                             .overlay(Rectangle().stroke(Color.white.opacity(0.4), lineWidth: 1))
+                        
                         Text(partido.acronimoLocal).font(.headline).bold()
                         Text("\(golesLocal) - \(golesVisitante)").font(.title3).monospacedDigit().padding(.horizontal, 2)
                         Text(partido.acronimoVisitante).font(.headline).bold()
+                        
                         Rectangle()
                             .fill(partido.colorVisitanteHex.toColorWatch())
                             .frame(width: 4, height: 22)
@@ -136,11 +138,11 @@ struct VistaJuegoActivo: View {
                     
                     Divider().background(Color.gray.opacity(0.3))
                     
-                    // 3. ZONA CRONÓMETRO
+                    // Timer Display
                     zonaCronometro
                         .frame(maxHeight: .infinity)
                     
-                    // 4. BOTONES
+                    // Controls
                     zonaBotonesAccion.padding(.bottom, 5)
                 }
             }
@@ -163,11 +165,13 @@ struct VistaJuegoActivo: View {
                     }
                 }
                 .onAppear {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { withAnimation { mostrarGolOverlay = false } }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+                        withAnimation { mostrarGolOverlay = false }
+                    }
                 }
             }
         }
-        // TIMERS DE UI: Solo para chequear eventos (vibración, final de parte), NO para sumar tiempo
+        // Event Loop
         .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in gestionarLogicaEventos() }
         .onReceive(Timer.publish(every: 0.5, on: .main, in: .common).autoconnect()) { _ in gestionarParpadeo() }
         .onAppear {
@@ -175,7 +179,7 @@ struct VistaJuegoActivo: View {
         }
     }
     
-    // --- ZONA CRONÓMETRO ---
+    // MARK: - Subviews
     
     var zonaCronometro: some View {
         VStack(spacing: 0) {
@@ -210,7 +214,7 @@ struct VistaJuegoActivo: View {
                 Spacer()
                 
                 if !esTiempoAnadido {
-                    // --- TIEMPO REGULAR ---
+                    // Regular Time
                     VStack(spacing: -5) {
                         Text(formatearTiempo(segundosTranscurridos))
                             .font(.system(size: 52, weight: .bold))
@@ -229,7 +233,7 @@ struct VistaJuegoActivo: View {
                     .padding(.top, estado == .primeraParte ? 5 : 0)
                     
                 } else {
-                    // --- TIEMPO AÑADIDO (Descuento) ---
+                    // Added Time (Injury Time)
                     VStack(spacing: -5) {
                         if estado == .primeraParte {
                             Text(formatearTiempo(Int(duracionParteSegundos)))
@@ -254,7 +258,6 @@ struct VistaJuegoActivo: View {
                             .padding(.top, 2)
                     }
                 }
-                
                 Spacer()
             }
         }
@@ -264,32 +267,50 @@ struct VistaJuegoActivo: View {
         HStack(spacing: 20) {
             switch estado {
             case .previa:
-                Button { iniciarPartido() } label: { Text("COMENZAR").bold() }.tint(.green).frame(height: 40).clipShape(Capsule())
+                Button { iniciarPartido() } label: {
+                    Text("COMENZAR").bold()
+                }
+                .tint(.green)
+                .frame(height: 40)
+                .clipShape(Capsule())
                 
             case .primeraParte, .segundaParte:
-                Button { pausarReanudar() } label: { Image(systemName: cronometroCorriendo ? "pause.fill" : "play.fill").font(.title3) }
-                    .tint(cronometroCorriendo ? .yellow : .green).frame(width: 45, height: 45).clipShape(Circle())
+                Button { pausarReanudar() } label: {
+                    Image(systemName: cronometroCorriendo ? "pause.fill" : "play.fill")
+                        .font(.title3)
+                }
+                .tint(cronometroCorriendo ? .yellow : .green)
+                .frame(width: 45, height: 45)
+                .clipShape(Circle())
                 
-                Button { if estado == .primeraParte { finalizarParte() } else { finalizarPartido() } } label: { Image(systemName: "flag.checkered").font(.title3) }
-                    .tint(.red).frame(width: 45, height: 45).clipShape(Circle())
+                Button {
+                    if estado == .primeraParte { finalizarParte() } else { finalizarPartido() }
+                } label: {
+                    Image(systemName: "flag.checkered").font(.title3)
+                }
+                .tint(.red)
+                .frame(width: 45, height: 45)
+                .clipShape(Circle())
                 
             case .descanso:
                 Button("FIN DESCANSO") { prepararSegundaParte() }
-                    .font(.system(size: 14, weight: .bold)).tint(.blue).frame(height: 40).clipShape(Capsule())
+                    .font(.system(size: 14, weight: .bold))
+                    .tint(.blue)
+                    .frame(height: 40)
+                    .clipShape(Capsule())
                 
-            case .finalizado: EmptyView()
+            case .finalizado:
+                EmptyView()
             }
         }
     }
     
-    // --- LÓGICA MODIFICADA ---
+    // MARK: - Logic & Event Handling
     
-    // Esta función ya no suma +1 a una variable. Solo comprueba hitos (fin de parte, vibraciones).
     func gestionarLogicaEventos() {
         if estado == .primeraParte || estado == .segundaParte {
             if cronometroCorriendo {
-                // Comprobamos si acabamos de cruzar el umbral del tiempo reglamentario
-                // Usamos un rango pequeño (0.0 a 1.2) para asegurar que vibra una vez al llegar al minuto exacto
+                // Check if we just crossed the regulation time threshold
                 let diferencia = cronoJuego.tiempoMostrado - duracionParteSegundos
                 if diferencia >= 0 && diferencia < 1.2 {
                     WKInterfaceDevice.current().play(.stop)
@@ -299,7 +320,6 @@ struct VistaJuegoActivo: View {
                 if contadorPausa % 10 == 0 { WKInterfaceDevice.current().play(.retry) }
             }
         } else if estado == .descanso {
-            // El cronoDescanso se encarga de sumar, aquí solo comprobamos si vibramos
             if cronoDescanso.tiempoMostrado > duracionDescansoSegundos {
                 contadorExcesoDescanso += 1
                 if contadorExcesoDescanso % 10 == 0 { WKInterfaceDevice.current().play(.failure) }
@@ -308,7 +328,9 @@ struct VistaJuegoActivo: View {
     }
     
     func gestionarParpadeo() {
-        if estado == .previa { colorParpadeo = (colorParpadeo == .white) ? .green : .white }
+        if estado == .previa {
+            colorParpadeo = (colorParpadeo == .white) ? .green : .white
+        }
         if (estado == .primeraParte || estado == .segundaParte) && !cronometroCorriendo {
             colorParpadeo = (colorParpadeo == .white) ? .red : .white
         }
@@ -317,10 +339,9 @@ struct VistaJuegoActivo: View {
         }
     }
     
-    // FUNCIONES DE ESTADO
     func iniciarPartido() {
         estado = .primeraParte
-        cronoJuego.start() // <--- USAMOS EL GESTOR
+        cronoJuego.start()
         WKInterfaceDevice.current().play(.start)
         
         DispatchQueue.global(qos: .userInitiated).async {
@@ -330,11 +351,11 @@ struct VistaJuegoActivo: View {
     
     func pausarReanudar() {
         if cronoJuego.estaCorriendo {
-            cronoJuego.pause() // <--- USAMOS EL GESTOR
+            cronoJuego.pause()
             healthKit.pausarEntrenamiento()
             WKInterfaceDevice.current().play(.click)
         } else {
-            cronoJuego.start() // <--- USAMOS EL GESTOR
+            cronoJuego.start()
             healthKit.reanudarEntrenamiento()
             contadorPausa = 0
             WKInterfaceDevice.current().play(.click)
@@ -342,23 +363,20 @@ struct VistaJuegoActivo: View {
     }
     
     func finalizarParte() {
-        cronoJuego.pause() // Pausamos el juego
+        cronoJuego.pause()
         healthKit.pausarEntrenamiento()
         
         estado = .descanso
-        cronoDescanso.reset() // Preparamos el crono del descanso
-        cronoDescanso.start() // Arrancamos el crono del descanso
+        cronoDescanso.reset()
+        cronoDescanso.start()
         
         WKInterfaceDevice.current().play(.stop)
     }
     
     func prepararSegundaParte() {
-        cronoDescanso.pause() // Paramos el descanso
-        
+        cronoDescanso.pause()
         estado = .segundaParte
-        cronoJuego.reset() // Reiniciamos el crono visual para que empiece de 00:00 en la 2a parte
-        // No arrancamos (start) hasta que el usuario pulse Play, tal como tenías antes
-        
+        cronoJuego.reset()
         WKInterfaceDevice.current().play(.click)
     }
     
@@ -373,8 +391,15 @@ struct VistaJuegoActivo: View {
     }
     
     func anotarGol(esLocal: Bool) {
-        if esLocal { golesLocal += 1; nombreEquipoGol = partido.equipoLocal; colorEquipoGol = partido.colorLocalHex.toColorWatch() }
-        else { golesVisitante += 1; nombreEquipoGol = partido.equipoVisitante; colorEquipoGol = partido.colorVisitanteHex.toColorWatch() }
+        if esLocal {
+            golesLocal += 1
+            nombreEquipoGol = partido.equipoLocal
+            colorEquipoGol = partido.colorLocalHex.toColorWatch()
+        } else {
+            golesVisitante += 1
+            nombreEquipoGol = partido.equipoVisitante
+            colorEquipoGol = partido.colorVisitanteHex.toColorWatch()
+        }
         
         let minutoBase = estado == .segundaParte ? partido.duracionParteMinutos : 0
         minutoGol = (Int(cronoJuego.tiempoMostrado) / 60) + minutoBase + 1
@@ -390,16 +415,28 @@ struct VistaJuegoActivo: View {
     }
 }
 
-// STRUCT AUXILIARES (SE MANTIENEN IGUAL)
+// MARK: - Auxiliary Components
 
 struct ImagenEscudoWatch: View {
     let data: Data?
     let size: CGFloat
+    
     var body: some View {
         if let data = data, let uiImage = UIImage(data: data) {
-            Image(uiImage: uiImage).resizable().scaledToFill().frame(width: size, height: size).clipShape(Circle())
+            Image(uiImage: uiImage)
+                .resizable()
+                .scaledToFill()
+                .frame(width: size, height: size)
+                .clipShape(Circle())
         } else {
-            Circle().fill(Color.gray.opacity(0.3)).frame(width: size, height: size).overlay(Image(systemName: "shield.fill").font(.system(size: size * 0.5)).foregroundStyle(.gray.opacity(0.5)))
+            Circle()
+                .fill(Color.gray.opacity(0.3))
+                .frame(width: size, height: size)
+                .overlay(
+                    Image(systemName: "shield.fill")
+                        .font(.system(size: size * 0.5))
+                        .foregroundStyle(.gray.opacity(0.5))
+                )
         }
     }
 }
@@ -420,7 +457,7 @@ struct VistaResumenFinal: View {
                 .padding(.top, 10)
             
             HStack(spacing: 20) {
-                // LOCAL
+                // Local
                 VStack {
                     ImagenEscudoWatch(data: partido.localEscudoData, size: 40)
                     Rectangle()
@@ -429,7 +466,7 @@ struct VistaResumenFinal: View {
                         .overlay(Rectangle().stroke(Color.white.opacity(0.6), lineWidth: 1))
                 }
                 
-                // VISITANTE
+                // Visitor
                 VStack {
                     ImagenEscudoWatch(data: partido.visitanteEscudoData, size: 40)
                     Rectangle()

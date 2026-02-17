@@ -3,20 +3,23 @@ import UIKit
 import SwiftData
 
 struct FormularioCategoriaView: View {
+    // Contexto y Navegación
     @Environment(\.modelContext) private var contexto
     @Environment(\.dismiss) private var cerrar
     
-    // Opcional: Si esto tiene valor, estamos EDITANDO. Si es nil, estamos CREANDO.
+    // Inyección de dependencia (Nil = Creación, Valor = Edición)
     var categoriaAEditar: Categoria?
     
-    // Variables temporales
+    // Estado del Formulario
     @State private var nombre: String = ""
     @State private var edadJugadores: String = ""
     @State private var tarifaPrincipal: Double = 0.0
     
+    // Lógica de Asistente
     @State private var permiteAsistente: Bool = false
     @State private var tarifaAsistente: Double = 0.0
     
+    // Configuración de Tiempo
     @State private var duracionParte: Int = 45
     @State private var duracionDescanso: Int = 15
     
@@ -41,6 +44,7 @@ struct FormularioCategoriaView: View {
                             .keyboardType(.decimalPad)
                     }
                 }
+                
                 Section("Reglas de Tiempo (Minutos)") {
                     HStack {
                         Text("Duración Parte")
@@ -69,30 +73,31 @@ struct FormularioCategoriaView: View {
                     Button("Cancelar") { cerrar() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Guardar") {
-                        guardar()
-                    }
-                    .disabled(nombre.isEmpty)
+                    Button("Guardar") { guardar() }
+                        .disabled(nombre.isEmpty)
                 }
             }
-            // AL APARECER: Si estamos editando, rellenamos los campos con los datos viejos
             .onAppear {
-                if let categoria = categoriaAEditar {
-                    nombre = categoria.nombre
-                    edadJugadores = categoria.edadJugadores
-                    tarifaPrincipal = categoria.tarifaPrincipal
-                    permiteAsistente = categoria.permiteAsistente
-                    tarifaAsistente = categoria.tarifaAsistente
-                    duracionParte = categoria.duracionParteMinutos
-                    duracionDescanso = categoria.duracionDescansoMinutos
-                }
+                cargarDatosSiEsEdicion()
             }
         }
     }
     
+    private func cargarDatosSiEsEdicion() {
+        guard let categoria = categoriaAEditar else { return }
+        
+        nombre = categoria.nombre
+        edadJugadores = categoria.edadJugadores
+        tarifaPrincipal = categoria.tarifaPrincipal
+        permiteAsistente = categoria.permiteAsistente
+        tarifaAsistente = categoria.tarifaAsistente
+        duracionParte = categoria.duracionParteMinutos
+        duracionDescanso = categoria.duracionDescansoMinutos
+    }
+    
     private func guardar() {
         if let categoria = categoriaAEditar {
-            // --- MODO EDICIÓN: Actualizamos la existente ---
+            // Update
             categoria.nombre = nombre
             categoria.edadJugadores = edadJugadores
             categoria.tarifaPrincipal = tarifaPrincipal
@@ -100,9 +105,8 @@ struct FormularioCategoriaView: View {
             categoria.tarifaAsistente = permiteAsistente ? tarifaAsistente : 0.0
             categoria.duracionParteMinutos = duracionParte
             categoria.duracionDescansoMinutos = duracionDescanso
-            // SwiftData guarda automáticamente los cambios en objetos existentes
         } else {
-            // --- MODO CREACIÓN: Insertamos una nueva ---
+            // Create
             let nuevaCategoria = Categoria(
                 nombre: nombre,
                 edadJugadores: edadJugadores,
@@ -114,7 +118,6 @@ struct FormularioCategoriaView: View {
             )
             contexto.insert(nuevaCategoria)
         }
-        
         cerrar()
     }
 }

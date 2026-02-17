@@ -4,27 +4,30 @@ import Combine
 struct VistaPreviaPartido: View {
     let partido: Partido
     
+    // State & Timer
     @State private var tiempoRestante: String = ""
-    let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+    private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     
-    // Necesario para abrir enlaces (Mapas)
+    // Environment
     @Environment(\.openURL) var openURL
     
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
                 
-                // 1. FECHA
+                // MARK: Header Date
                 Text(partido.fecha.formatted(date: .long, time: .shortened))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .padding(.top, 20)
                 
-                // 2. EQUIPOS
+                // MARK: Matchup Section
                 HStack(alignment: .top, spacing: 20) {
-                    // LOCAL
+                    
+                    // Local Team
                     VStack {
                         ImagenEscudo(data: partido.equipoLocal?.escudoData, size: 80)
+                        
                         Text(partido.equipoLocal?.nombre ?? "Local")
                             .font(.headline)
                             .multilineTextAlignment(.center)
@@ -32,12 +35,12 @@ struct VistaPreviaPartido: View {
                         Capsule()
                             .fill(partido.equipoLocal?.colorHex.toColor() ?? .gray)
                             .frame(height: 5)
-                            .overlay(Capsule().stroke(Color.primary.opacity(0.2), lineWidth: 1)) // <--- AÑADIR
+                            .overlay(Capsule().stroke(Color.primary.opacity(0.2), lineWidth: 1))
                             .padding(.top, 5)
                     }
                     .frame(width: 110)
                     
-                    // VS
+                    // VS Badge
                     VStack(spacing: 5) {
                         Text("VS")
                             .font(.system(size: 30, weight: .black, design: .rounded))
@@ -52,9 +55,10 @@ struct VistaPreviaPartido: View {
                     }
                     .padding(.top, 20)
                     
-                    // VISITANTE
+                    // Visitor Team
                     VStack {
                         ImagenEscudo(data: partido.equipoVisitante?.escudoData, size: 80)
+                        
                         Text(partido.equipoVisitante?.nombre ?? "Visitante")
                             .font(.headline)
                             .multilineTextAlignment(.center)
@@ -62,19 +66,20 @@ struct VistaPreviaPartido: View {
                         Capsule()
                             .fill(partido.equipoVisitante?.colorVisitanteHex.toColor() ?? .gray)
                             .frame(height: 5)
-                            .overlay(Capsule().stroke(Color.primary.opacity(0.2), lineWidth: 1)) // <--- AÑADIR
+                            .overlay(Capsule().stroke(Color.primary.opacity(0.2), lineWidth: 1))
                             .padding(.top, 5)
                     }
                     .frame(width: 110)
                 }
                 .padding(.vertical, 30)
                 
-                Divider().padding(.horizontal)
+                Divider()
+                    .padding(.horizontal)
                 
-                // 3. CUENTA ATRÁS Y DATOS
+                // MARK: Info & Countdown
                 VStack(spacing: 25) {
                     
-                    // CONTADOR EN VERTICAL
+                    // Countdown Display
                     VStack(spacing: 5) {
                         Text("INICIO EN")
                             .font(.caption)
@@ -89,10 +94,10 @@ struct VistaPreviaPartido: View {
                             .lineLimit(1)
                     }
                     
-                    // DATOS VERTICALES (Estadio y Tarifa)
+                    // Details Cards
                     VStack(spacing: 0) {
                         
-                        // --- BOTÓN MAPA ---
+                        // Stadium Action
                         Button {
                             abrirEnMapas()
                         } label: {
@@ -100,19 +105,18 @@ struct VistaPreviaPartido: View {
                                 Image(systemName: "sportscourt.fill")
                                     .foregroundStyle(.blue)
                                     .frame(width: 30)
+                                
                                 Text("Estadio")
                                     .foregroundStyle(.secondary)
                                 
                                 Spacer()
                                 
-                                // Nombre del estadio y botón IR
                                 HStack(spacing: 8) {
                                     Text(partido.equipoLocal?.estadio?.nombre ?? "Por definir")
                                         .bold()
                                         .foregroundStyle(.primary)
                                         .multilineTextAlignment(.trailing)
                                     
-                                    // Botón visual "IR"
                                     if partido.equipoLocal?.estadio?.nombre != nil {
                                         Image(systemName: "location.circle.fill")
                                             .font(.title2)
@@ -122,24 +126,23 @@ struct VistaPreviaPartido: View {
                             }
                             .padding()
                         }
-                        .buttonStyle(.plain) // Para que no parpadee toda la celda feo
-                        // ------------------
+                        .buttonStyle(.plain)
                         
-                        Divider().padding(.leading, 50)
+                        Divider()
+                            .padding(.leading, 50)
                         
-                        // Fila Tarifa
-                        // CORRECCIÓN: Usamos el Bool 'actuadoComoPrincipal'
-                        let tarifa = partido.actuadoComoPrincipal
-                        ? (partido.categoria?.tarifaPrincipal ?? 0)
-                        : (partido.categoria?.tarifaAsistente ?? 0)
+                        // Fee Estimation
                         HStack {
                             Image(systemName: "eurosign.circle.fill")
                                 .foregroundStyle(.green)
                                 .frame(width: 30)
+                            
                             Text("Tarifa estimada")
                                 .foregroundStyle(.secondary)
+                            
                             Spacer()
-                            Text("\(Int(tarifa))€")
+                            
+                            Text("\(Int(tarifaCalculada))€")
                                 .bold()
                         }
                         .padding()
@@ -158,12 +161,21 @@ struct VistaPreviaPartido: View {
         .onReceive(timer) { _ in actualizarCuentaAtras() }
         .onAppear { actualizarCuentaAtras() }
     }
+}
+
+// MARK: - Logic & Helpers
+
+private extension VistaPreviaPartido {
     
-    // --- LÓGICA DE MAPAS ---
+    var tarifaCalculada: Double {
+        partido.actuadoComoPrincipal
+        ? (partido.categoria?.tarifaPrincipal ?? 0)
+        : (partido.categoria?.tarifaAsistente ?? 0)
+    }
+    
     func abrirEnMapas() {
         guard let nombreEstadio = partido.equipoLocal?.estadio?.nombre else { return }
         
-        // Convertimos "Campo de Fútbol Municipal" a "Campo+de+Futbol..." para URL
         let terminoBusqueda = nombreEstadio.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
         let urlString = "http://maps.apple.com/?q=\(terminoBusqueda)"
         
@@ -172,9 +184,9 @@ struct VistaPreviaPartido: View {
         }
     }
     
-    // --- LÓGICA CUENTA ATRÁS ---
     func actualizarCuentaAtras() {
         let diff = partido.fecha.timeIntervalSince(Date())
+        
         if diff <= 0 {
             tiempoRestante = "00:00:00"
         } else {

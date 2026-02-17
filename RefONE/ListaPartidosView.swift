@@ -4,31 +4,31 @@ import WatchConnectivity
 import Combine
 
 struct ListaPartidosView: View {
+    // Contexto de datos
     @Environment(\.modelContext) private var contexto
-    // Traemos todos para buscar por ID cuando llegue el resultado
     @Query(sort: \Partido.fecha, order: .forward) private var todosLosPartidos: [Partido]
     
+    // Estado de la vista
     @State private var filtroSeleccionado = 0
     @State private var esModoCreacion = false
     @State private var mostrandoAlertaSincronizacion = false
     
-    // Filtros
+    // Propiedades computadas para filtrado
     var partidosProximos: [Partido] { todosLosPartidos.filter { !$0.finalizado } }
     var partidosDisputados: [Partido] { todosLosPartidos.filter { $0.finalizado }.reversed() }
     
     var body: some View {
         VStack(spacing: 0) {
-            
-            // Selector
+            // Segmented Control
             Picker("Estado", selection: $filtroSeleccionado) {
                 Text("Próximos").tag(0)
-                Text("Disputados").tag(1)
+                Text("Finalizados").tag(1)
             }
             .pickerStyle(.segmented)
             .padding()
             .background(Color(UIColor.systemGroupedBackground))
             
-            // Listas
+            // Renderizado de listas condicional
             if filtroSeleccionado == 0 {
                 ListaGenericaPartidos(partidos: partidosProximos, esDisputado: false)
             } else {
@@ -37,16 +37,33 @@ struct ListaPartidosView: View {
         }
         .navigationTitle("Partidos")
         .background(Color(UIColor.systemGroupedBackground))
+        // 👇 AQUÍ ESTÁN LOS CAMBIOS EN LA TOOLBAR 👇
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                Button { sincronizarReloj() } label: {
-                    Image(systemName: "applewatch").symbolEffect(.pulse, isActive: mostrandoAlertaSincronizacion)
+                Button {
+                    sincronizarReloj()
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "applewatch")
+                            .symbolEffect(.pulse, isActive: mostrandoAlertaSincronizacion)
+                        Text("Sincronizar")
+                            .font(.subheadline)
+                    }
                 }
             }
+            
             ToolbarItem(placement: .primaryAction) {
-                Button("Crear", systemImage: "plus") { esModoCreacion = true }
+                Button {
+                    esModoCreacion = true
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "plus")
+                    }
+                }
             }
         }
+        // 👆 FIN DE LOS CAMBIOS 👆
+        
         .sheet(isPresented: $esModoCreacion) {
             NavigationStack { FormularioPartidoView() }
         }
@@ -55,73 +72,22 @@ struct ListaPartidosView: View {
         } message: {
             Text("Se han enviado \(partidosProximos.count) partidos al Apple Watch.")
         }
-        
-        // --- AQUÍ RECIBIMOS LOS DATOS DEL RELOJ (Offline y Online) ---
-
+        // Suscripción a actualizaciones remotas (WatchConnectivity)
         .onReceive(NotificationCenter.default.publisher(for: .resultadoPartidoRecibido)) { notification in
-            print("🔔 NOTIFICACIÓN RECIBIDA EN LISTA PARTIDOS") // <--- CHIVATO 1
-            
-            guard let info = notification.userInfo else {
-                print("❌ La notificación llegó vacía")
-                return
-            }
-            
-            // Imprimimos todo lo que llega
-            print("📦 Datos crudos: \(info)") // <--- CHIVATO 2
-            
-            guard let idString = info["idPartido"] as? String,
-                  let uuidBuscado = UUID(uuidString: idString),
-                  let golesL = info["golesLocal"] as? Int,
-                  let golesV = info["golesVisitante"] as? Int else {
-                print("❌ Faltan datos básicos en el paquete")
-                return
-            }
-
-            print("🔎 Buscando partido con ID: \(uuidBuscado)")
-
-            if let partidoEncontrado = todosLosPartidos.first(where: { $0.id == uuidBuscado }) {
-                print("✅ Partido encontrado en base de datos. Actualizando...")
-                
-                partidoEncontrado.golesLocal = golesL
-                partidoEncontrado.golesVisitante = golesV
-                partidoEncontrado.finalizado = true
-                
-                // REVISIÓN DEL WORKOUT ID
-                if let wIDString = info["workoutID"] as? String {
-                    print("🏋️‍♂️ El Reloj ha mandado un WorkoutID: \(wIDString)")
-                    if let wUUID = UUID(uuidString: wIDString) {
-                        partidoEncontrado.workoutID = wUUID
-                        print("💾 ¡GUARDADO! ID vinculado al partido.")
-                    } else {
-                        print("❌ El ID de workout no tiene formato UUID válido.")
-                    }
-                } else {
-                    print("⚠️ EL RELOJ NO HA MANDADO 'workoutID'. El campo está vacío.")
-                }
-                
-                do {
-                    try contexto.save()
-                    print("💾 Contexto de SwiftData guardado.")
-                } catch {
-                    print("❌ Error guardando contexto: \(error)")
-                }
-                
-            } else {
-                print("❌ ERROR CRÍTICO: No encuentro el partido en el iPhone. IDs disponibles: \(todosLosPartidos.map { $0.id })")
-            }
+            procesarNotificacionResultado(notification)
         }
     }
-    
-    
-    // MARK: - LÓGICA DE ENVÍO AL RELOJ
+}
+
+// MARK: - Lógica de Negocio y Sincronización
+
+private extension ListaPartidosView {
     
     func sincronizarReloj() {
-        print("📲 Sincronizando...")
+        print("[Sync] Iniciando sincronización con Apple Watch...")
         
         let lista = partidosProximos.map { p in
-            
-            // LÓGICA DE COLORES CORREGIDA:
-            // Si el partido tiene color personalizado, usamos ese. Si no, el del equipo.
+            // Resolución de colores: Override vs Default
             let colorL = !p.colorLocalHexPartido.isEmpty ? p.colorLocalHexPartido : (p.equipoLocal?.colorHex ?? "#000000")
             let colorV = !p.colorVisitanteHexPartido.isEmpty ? p.colorVisitanteHexPartido : (p.equipoVisitante?.colorVisitanteHex ?? "#FFFFFF")
             
@@ -129,12 +95,12 @@ struct ListaPartidosView: View {
                 id: p.id,
                 equipoLocal: p.equipoLocal?.nombre ?? "Local",
                 acronimoLocal: p.equipoLocal?.acronimo ?? "LOC",
-                colorLocalHex: colorL, // <--- Color correcto
+                colorLocalHex: colorL,
                 localEscudoData: comprimirEscudo(p.equipoLocal?.escudoData),
                 
                 equipoVisitante: p.equipoVisitante?.nombre ?? "Visitante",
                 acronimoVisitante: p.equipoVisitante?.acronimo ?? "VIS",
-                colorVisitanteHex: colorV, // <--- Color correcto
+                colorVisitanteHex: colorV,
                 visitanteEscudoData: comprimirEscudo(p.equipoVisitante?.escudoData),
                 
                 estadio: p.equipoLocal?.estadio?.nombre ?? "Campo",
@@ -152,18 +118,56 @@ struct ListaPartidosView: View {
         mostrandoAlertaSincronizacion = true
     }
     
+    func procesarNotificacionResultado(_ notification: Notification) {
+        guard let info = notification.userInfo else { return }
+        print("[Sync] Payload recibido: \(info)")
+        
+        // Validación de datos obligatorios
+        guard let idString = info["idPartido"] as? String,
+              let uuidBuscado = UUID(uuidString: idString),
+              let golesL = info["golesLocal"] as? Int,
+              let golesV = info["golesVisitante"] as? Int else {
+            print("[Sync Error] Datos incompletos en el payload.")
+            return
+        }
+        
+        // Búsqueda y actualización
+        if let partidoEncontrado = todosLosPartidos.first(where: { $0.id == uuidBuscado }) {
+            partidoEncontrado.golesLocal = golesL
+            partidoEncontrado.golesVisitante = golesV
+            partidoEncontrado.finalizado = true
+            
+            // Asociación opcional de WorkoutID
+            if let wIDString = info["workoutID"] as? String, let wUUID = UUID(uuidString: wIDString) {
+                partidoEncontrado.workoutID = wUUID
+                print("[Sync] WorkoutID vinculado correctamente.")
+            }
+            
+            do {
+                try contexto.save()
+                print("[Sync] Contexto persistido.")
+            } catch {
+                print("[Sync Error] Fallo al guardar contexto: \(error)")
+            }
+        } else {
+            print("[Sync Error] Partido no encontrado con ID: \(uuidBuscado)")
+        }
+    }
+    
     func comprimirEscudo(_ data: Data?) -> Data? {
         guard let data = data, let image = UIImage(data: data) else { return nil }
         let newSize = CGSize(width: 100, height: 100)
+        
         UIGraphicsBeginImageContextWithOptions(newSize, false, 1.0)
         image.draw(in: CGRect(origin: .zero, size: newSize))
         let newImage = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
+        
         return newImage?.jpegData(compressionQuality: 0.5)
     }
 }
 
-// MARK: - COMPONENTES AUXILIARES
+// MARK: - Componentes de Lista
 
 struct ListaGenericaPartidos: View {
     let partidos: [Partido]
@@ -182,22 +186,13 @@ struct ListaGenericaPartidos: View {
             } else {
                 ForEach(partidos) { partido in
                     ZStack {
-                        // Navegación Invisible
-                        if esDisputado {
-                            // Si ya se jugó -> Vamos al detalle
-                            NavigationLink(destination: DetallePartidoView(partido: partido)) {
-                                EmptyView()
-                            }
-                            .opacity(0)
-                        } else {
-                            // Si es próximo -> Vamos a la Vista Previa
-                            NavigationLink(destination: VistaPreviaPartido(partido: partido)) {
-                                EmptyView()
-                            }
-                            .opacity(0)
+                        // Navegación invisible
+                        NavigationLink(destination: destinationView(for: partido)) {
+                            EmptyView()
                         }
+                        .opacity(0)
                         
-                        // La Celda Visual
+                        // Celda visual
                         CeldaPartido(partido: partido, esDisputado: esDisputado)
                     }
                     .listRowSeparator(.hidden)
@@ -216,6 +211,15 @@ struct ListaGenericaPartidos: View {
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
     }
+    
+    @ViewBuilder
+    private func destinationView(for partido: Partido) -> some View {
+        if esDisputado {
+            DetallePartidoView(partido: partido)
+        } else {
+            VistaPreviaPartido(partido: partido)
+        }
+    }
 }
 
 struct CeldaPartido: View {
@@ -233,14 +237,14 @@ struct CeldaPartido: View {
     }
 }
 
-// MARK: - DISEÑOS DE CELDA
+// MARK: - Celdas Específicas
 
 struct VistaCeldaProximo: View {
     let partido: Partido
     
     var body: some View {
         VStack(spacing: 12) {
-            // CATEGORÍA
+            // Etiqueta de Categoría
             Text(partido.categoria?.nombre.uppercased() ?? "PARTIDO")
                 .font(.caption2)
                 .bold()
@@ -250,15 +254,14 @@ struct VistaCeldaProximo: View {
                 .background(Color.orange)
                 .clipShape(Capsule())
             
-            // ENFRENTAMIENTO
+            // Bloque de Enfrentamiento
             HStack(alignment: .center, spacing: 6) {
-                // LOCAL
+                // Equipo Local
                 HStack(spacing: 4) {
                     ImagenEscudo(data: partido.equipoLocal?.escudoData, size: 24)
                     
-                    // LÓGICA COLOR: Prioriza el del partido, sino el del equipo
                     Rectangle()
-                        .fill((!partido.colorLocalHexPartido.isEmpty ? partido.colorLocalHexPartido : partido.equipoLocal?.colorHex ?? "#000000").toColor())
+                        .fill(resolveColor(hex: partido.colorLocalHexPartido, fallback: partido.equipoLocal?.colorHex, defaultHex: "#000000"))
                         .frame(width: 4, height: 20)
                         .overlay(Rectangle().stroke(Color.primary.opacity(0.2), lineWidth: 1))
                     
@@ -274,7 +277,7 @@ struct VistaCeldaProximo: View {
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 2)
                 
-                // VISITANTE
+                // Equipo Visitante
                 HStack(spacing: 4) {
                     Text(partido.equipoVisitante?.nombre ?? "Visitante")
                         .font(.subheadline)
@@ -282,9 +285,8 @@ struct VistaCeldaProximo: View {
                         .lineLimit(1)
                         .minimumScaleFactor(0.8)
                     
-                    // LÓGICA COLOR: Prioriza el del partido, sino el del equipo
                     Rectangle()
-                        .fill((!partido.colorVisitanteHexPartido.isEmpty ? partido.colorVisitanteHexPartido : partido.equipoVisitante?.colorVisitanteHex ?? "#FFFFFF").toColor())
+                        .fill(resolveColor(hex: partido.colorVisitanteHexPartido, fallback: partido.equipoVisitante?.colorVisitanteHex, defaultHex: "#FFFFFF"))
                         .frame(width: 4, height: 20)
                         .overlay(Rectangle().stroke(Color.primary.opacity(0.2), lineWidth: 1))
                     
@@ -295,7 +297,7 @@ struct VistaCeldaProximo: View {
             
             Divider()
             
-            // FECHA Y ESTADIO
+            // Footer: Fecha y Estadio
             VStack(spacing: 4) {
                 Text(partido.fecha.formatted(date: .long, time: .shortened))
                     .font(.caption)
@@ -317,6 +319,12 @@ struct VistaCeldaProximo: View {
         .padding(.horizontal)
         .padding(.vertical, 4)
     }
+    
+    // Helper visual para resolución de colores
+    private func resolveColor(hex: String, fallback: String?, defaultHex: String) -> Color {
+        let finalHex = !hex.isEmpty ? hex : (fallback ?? defaultHex)
+        return finalHex.toColor()
+    }
 }
 
 struct VistaCeldaDisputado: View {
@@ -324,8 +332,7 @@ struct VistaCeldaDisputado: View {
     
     var body: some View {
         HStack(spacing: 12) {
-            
-            // FECHA
+            // Bloque de Fecha
             VStack(alignment: .center) {
                 Text(partido.fecha.formatted(.dateTime.day()))
                     .font(.headline)
@@ -339,9 +346,8 @@ struct VistaCeldaDisputado: View {
             
             Divider()
             
-            // CATEGORÍA + EQUIPOS
+            // Detalles del Partido
             VStack(alignment: .leading, spacing: 6) {
-                
                 Text(partido.categoria?.nombre.uppercased() ?? "-")
                     .font(.system(size: 9, weight: .bold))
                     .foregroundStyle(.white)
@@ -350,10 +356,10 @@ struct VistaCeldaDisputado: View {
                     .background(Color.orange)
                     .clipShape(Capsule())
                 
-                // LOCAL
+                // Local
                 HStack {
                     Rectangle()
-                        .fill((!partido.colorLocalHexPartido.isEmpty ? partido.colorLocalHexPartido : partido.equipoLocal?.colorHex ?? "#000000").toColor())
+                        .fill(resolveColor(hex: partido.colorLocalHexPartido, fallback: partido.equipoLocal?.colorHex, defaultHex: "#000000"))
                         .frame(width: 4, height: 14)
                         .overlay(Rectangle().stroke(Color.primary.opacity(0.2), lineWidth: 1))
                     
@@ -362,10 +368,10 @@ struct VistaCeldaDisputado: View {
                         .lineLimit(1)
                 }
                 
-                // VISITANTE
+                // Visitante
                 HStack {
                     Rectangle()
-                        .fill((!partido.colorVisitanteHexPartido.isEmpty ? partido.colorVisitanteHexPartido : partido.equipoVisitante?.colorVisitanteHex ?? "#FFFFFF").toColor())
+                        .fill(resolveColor(hex: partido.colorVisitanteHexPartido, fallback: partido.equipoVisitante?.colorVisitanteHex, defaultHex: "#FFFFFF"))
                         .frame(width: 4, height: 14)
                         .overlay(Rectangle().stroke(Color.primary.opacity(0.2), lineWidth: 1))
                     
@@ -377,13 +383,17 @@ struct VistaCeldaDisputado: View {
             
             Spacer()
             
-            // RESULTADO
+            // Marcador Final
             HStack(spacing: 10) {
                 VStack(alignment: .trailing, spacing: 6) {
-                    Text("\(partido.golesLocal)").font(.subheadline).monospacedDigit().bold()
-                    Text("\(partido.golesVisitante)").font(.subheadline).monospacedDigit().bold()
+                    Text("\(partido.golesLocal)")
+                        .font(.subheadline).monospacedDigit().bold()
+                    Text("\(partido.golesVisitante)")
+                        .font(.subheadline).monospacedDigit().bold()
                 }
-                Image(systemName: "chevron.right").font(.caption).foregroundStyle(.gray.opacity(0.5))
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundStyle(.gray.opacity(0.5))
             }
         }
         .padding(12)
@@ -392,5 +402,10 @@ struct VistaCeldaDisputado: View {
         .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.gray.opacity(0.1), lineWidth: 1))
         .padding(.horizontal)
         .padding(.vertical, 2)
+    }
+    
+    private func resolveColor(hex: String, fallback: String?, defaultHex: String) -> Color {
+        let finalHex = !hex.isEmpty ? hex : (fallback ?? defaultHex)
+        return finalHex.toColor()
     }
 }

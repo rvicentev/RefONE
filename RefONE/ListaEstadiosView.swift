@@ -2,9 +2,11 @@ import SwiftUI
 import SwiftData
 
 struct ListaEstadiosView: View {
+    // Contexto de datos
     @Environment(\.modelContext) private var contexto
     @Query(sort: \Estadio.nombre) private var estadios: [Estadio]
     
+    // Gestión de estado y navegación
     @State private var estadioSeleccionado: Estadio?
     @State private var esModoCreacion = false
     
@@ -12,6 +14,7 @@ struct ListaEstadiosView: View {
         List {
             ForEach(estadios) { estadio in
                 HStack {
+                    // Información Principal
                     VStack(alignment: .leading) {
                         Text(estadio.nombre)
                             .font(.headline)
@@ -22,8 +25,7 @@ struct ListaEstadiosView: View {
                     
                     Spacer()
                     
-                    // Mostramos los acrónimos de los equipos locales
-                    // Usamos un HStack pequeño con scroll si hubiera muchos
+                    // Relación: Equipos Locales (Scroll Horizontal)
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack {
                             if let equipos = estadio.equiposLocales {
@@ -39,7 +41,7 @@ struct ListaEstadiosView: View {
                             }
                         }
                     }
-                    .frame(maxWidth: 100, alignment: .trailing) // Limitamos el ancho
+                    .frame(maxWidth: 100, alignment: .trailing)
                 }
                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                     Button(role: .destructive) {
@@ -47,6 +49,7 @@ struct ListaEstadiosView: View {
                     } label: {
                         Label("Borrar", systemImage: "trash")
                     }
+                    
                     Button {
                         estadioSeleccionado = estadio
                     } label: {
@@ -71,14 +74,17 @@ struct ListaEstadiosView: View {
     }
 }
 
-// --- FORMULARIO ESTADIO ---
+// MARK: - Formulario Estadio
 
 struct FormularioEstadioView: View {
+    // Inyección de dependencias
     @Environment(\.modelContext) private var contexto
     @Environment(\.dismiss) private var cerrar
     
+    // Parámetro de entrada (Opcional para edición)
     var estadioAEditar: Estadio?
     
+    // Estado local
     @State private var nombre: String = ""
     @State private var lugar: String = ""
     
@@ -111,9 +117,11 @@ struct FormularioEstadioView: View {
     
     private func guardar() {
         if let estadio = estadioAEditar {
+            // Update flow
             estadio.nombre = nombre
             estadio.lugar = lugar
         } else {
+            // Create flow
             let nuevoEstadio = Estadio(nombre: nombre, lugar: lugar)
             contexto.insert(nuevoEstadio)
         }

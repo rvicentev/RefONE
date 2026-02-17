@@ -1,11 +1,12 @@
 import SwiftUI
 
 struct ListaPartidosWatchView: View {
+    // Connectivity Manager
     @StateObject private var conectividad = GestorConectividad.shared
     
-
+    // Data Source
     var partidosFiltrados: [PartidoReloj] {
-            return conectividad.partidosRecibidos // Devuelve todo lo que llegue, sea viejo o nuevo
+        return conectividad.partidosRecibidos
     }
     
     var body: some View {
@@ -31,7 +32,6 @@ struct ListaPartidosWatchView: View {
                         NavigationLink(destination: VistaJuegoActivo(partido: partido)) {
                             CeldaPartidoWatch(partido: partido)
                         }
-                        // Esto hace que la celda ocupe más y sea más fácil de pulsar
                         .listRowInsets(EdgeInsets(top: 8, leading: 10, bottom: 8, trailing: 10))
                     }
                 }
@@ -41,12 +41,15 @@ struct ListaPartidosWatchView: View {
     }
 }
 
+// MARK: - Row Component
+
 struct CeldaPartidoWatch: View {
     let partido: PartidoReloj
     
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            // 1. CABECERA: FECHA Y HORA
+            
+            // Header: Date & Time
             HStack {
                 Text(partido.fecha, format: .dateTime.day().month())
                     .foregroundStyle(.orange)
@@ -58,22 +61,23 @@ struct CeldaPartidoWatch: View {
             }
             .font(.caption2)
             
-            Divider().overlay(.gray.opacity(0.3))
+            Divider()
+                .overlay(.gray.opacity(0.3))
             
-            // 2. EQUIPOS
+            // Teams Section
             VStack(spacing: 6) {
-                // LOCAL
+                
+                // Local Team
                 HStack {
                     Rectangle()
                         .fill(partido.colorLocalHex.toColorWatch())
                         .frame(width: 4, height: 16)
-                        // AÑADIDO: Borde blanco para ver el negro
                         .overlay(Rectangle().stroke(Color.white.opacity(0.6), lineWidth: 1))
                     
                     Text(partido.acronimoLocal)
                         .font(.system(size: 16, weight: .bold))
                     
-                    Text(partido.equipoLocal) // Nombre completo pequeño si cabe
+                    Text(partido.equipoLocal)
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
@@ -81,12 +85,11 @@ struct CeldaPartidoWatch: View {
                     Spacer()
                 }
                 
-                // VISITANTE
+                // Visitor Team
                 HStack {
                     Rectangle()
                         .fill(partido.colorVisitanteHex.toColorWatch())
                         .frame(width: 4, height: 16)
-                        // AÑADIDO: Borde blanco para ver el negro
                         .overlay(Rectangle().stroke(Color.white.opacity(0.6), lineWidth: 1))
                     
                     Text(partido.acronimoVisitante)
@@ -101,12 +104,12 @@ struct CeldaPartidoWatch: View {
                 }
             }
             
-            // 3. PIE: ESTADIO Y CATEGORÍA
+            // Footer: Meta Info
             HStack {
                 Image(systemName: "sportscourt")
                 Text(partido.estadio)
                 Spacer()
-                Text(partido.categoria.prefix(3).uppercased()) // Ej: 1aR
+                Text(partido.categoria.prefix(3).uppercased())
                     .padding(.horizontal, 4)
                     .padding(.vertical, 2)
                     .background(Color.gray.opacity(0.3))

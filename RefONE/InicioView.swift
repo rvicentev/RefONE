@@ -2,10 +2,10 @@ import SwiftUI
 import SwiftData
 
 struct InicioView: View {
-    // Nombre guardado en memoria del teléfono
+    // Persistent Storage
     @AppStorage("nombreUsuario") private var nombreUsuario: String = "Árbitro"
     
-    // Obtenemos TODOS los partidos para filtrar aquí
+    // Data Query
     @Query(sort: \Partido.fecha, order: .forward) private var partidos: [Partido]
     
     var body: some View {
@@ -13,22 +13,33 @@ struct InicioView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 25) {
                     
-                    // 1. CABECERA DE BIENVENIDA
-                    VStack(alignment: .leading, spacing: 5) {
-                        Text("Hola, \(nombreUsuario)")
-                            .font(.system(size: 34, weight: .bold, design: .rounded))
-                            .foregroundStyle(.primary)
+                    // MARK: - Cabecera (Header) con Logo a la derecha
+                    HStack(alignment: .center) {
+                        VStack(alignment: .leading, spacing: 5) {
+                            Text("Hola, \(nombreUsuario)")
+                                .font(.system(size: 34, weight: .bold, design: .rounded))
+                                .foregroundStyle(.primary)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8)
+                            
+                            Text("Bienvenido a RefONE")
+                                .font(.title3)
+                                .foregroundStyle(.secondary)
+                        }
                         
-                        Text("Bienvenido a RefONE")
-                            .font(.title3)
-                            .foregroundStyle(.secondary)
+                        Spacer()
+                        
+                        Image("LogoApp")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(height: 110)
                     }
                     .padding(.top, 20)
                     
-                    // 2. TARJETA RESUMEN (ÚLTIMO MES)
+                    // MARK: - Monthly Summary Card
                     VStack(alignment: .leading, spacing: 15) {
                         HStack {
-                            Text("Resumen Mensual")
+                            Text("Este mes")
                                 .font(.headline)
                                 .foregroundStyle(.white)
                             Spacer()
@@ -37,29 +48,32 @@ struct InicioView: View {
                         }
                         
                         HStack(spacing: 20) {
-                            // Dato 1: Partidos
                             DatoResumenView(valor: "\(partidosMes.count)", etiqueta: "Partidos")
                             
-                            Divider().background(.white.opacity(0.5))
+                            Divider()
+                                .background(.white.opacity(0.5))
                             
-                            // Dato 2: Goles (Suma total)
                             DatoResumenView(valor: "\(golesMes)", etiqueta: "Goles")
                             
-                            Divider().background(.white.opacity(0.5))
+                            Divider()
+                                .background(.white.opacity(0.5))
                             
-                            // Dato 3: Ganancias
                             DatoResumenView(valor: String(format: "%.0f€", gananciasMes), etiqueta: "Ganado")
                         }
                         .padding(.top, 5)
                     }
                     .padding(20)
                     .background(
-                        LinearGradient(colors: [.orange, .red], startPoint: .topLeading, endPoint: .bottomTrailing)
+                        LinearGradient(
+                            colors: [.orange, .red],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
                     )
                     .cornerRadius(20)
                     .shadow(color: .orange.opacity(0.3), radius: 10, x: 0, y: 5)
                     
-                    // 3. PRÓXIMOS PARTIDOS
+                    // MARK: - Upcoming Matches
                     VStack(alignment: .leading, spacing: 15) {
                         Text("Próximos Partidos")
                             .font(.title2)
@@ -91,50 +105,139 @@ struct InicioView: View {
                     }
                 }
                 .padding(.horizontal)
+                .padding(.bottom, 30)
             }
-            .navigationBarHidden(true) // Ocultamos barra estándar para usar nuestro título grande
-            .background(Color(UIColor.systemGroupedBackground))
+            .navigationBarHidden(true)
+            .background(
+                // MARK: - Fondo con Grid Pattern Minimalista
+                ZStack {
+                    // Color base
+                    Color(UIColor.systemGroupedBackground)
+                    
+                    // Patrón de grid sutil
+                    GeometryReader { geometry in
+                        // Líneas verticales
+                        ForEach(0..<8) { i in
+                            Rectangle()
+                                .fill(
+                                    LinearGradient(
+                                        colors: [
+                                            Color.orange.opacity(0.02),
+                                            Color.orange.opacity(0.05),
+                                            Color.orange.opacity(0.02)
+                                        ],
+                                        startPoint: .top,
+                                        endPoint: .bottom
+                                    )
+                                )
+                                .frame(width: 1)
+                                .offset(x: CGFloat(i) * (geometry.size.width / 7))
+                        }
+                        
+                        // Líneas horizontales
+                        ForEach(0..<12) { i in
+                            Rectangle()
+                                .fill(
+                                    LinearGradient(
+                                        colors: [
+                                            Color.orange.opacity(0.02),
+                                            Color.orange.opacity(0.05),
+                                            Color.orange.opacity(0.02)
+                                        ],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
+                                .frame(height: 1)
+                                .offset(y: CGFloat(i) * (geometry.size.height / 11))
+                        }
+                    }
+                    
+                    // Gradiente diagonal superior
+                    LinearGradient(
+                        colors: [
+                            Color.orange.opacity(0.08),
+                            Color.clear
+                        ],
+                        startPoint: .topTrailing,
+                        endPoint: .center
+                    )
+                    
+                    // Gradiente diagonal inferior
+                    LinearGradient(
+                        colors: [
+                            Color.clear,
+                            Color.red.opacity(0.06)
+                        ],
+                        startPoint: .center,
+                        endPoint: .bottomLeading
+                    )
+                    
+                    // Puntos decorativos en esquinas
+                    VStack {
+                        HStack {
+                            Circle()
+                                .fill(Color.orange.opacity(0.15))
+                                .frame(width: 4, height: 4)
+                                .padding(.top, 100)
+                                .padding(.leading, 30)
+                            Spacer()
+                            Circle()
+                                .fill(Color.orange.opacity(0.12))
+                                .frame(width: 3, height: 3)
+                                .padding(.top, 150)
+                                .padding(.trailing, 50)
+                        }
+                        Spacer()
+                        HStack {
+                            Circle()
+                                .fill(Color.red.opacity(0.10))
+                                .frame(width: 3, height: 3)
+                                .padding(.bottom, 200)
+                                .padding(.leading, 80)
+                            Spacer()
+                            Circle()
+                                .fill(Color.orange.opacity(0.14))
+                                .frame(width: 4, height: 4)
+                                .padding(.bottom, 150)
+                                .padding(.trailing, 40)
+                        }
+                    }
+                }
+                .ignoresSafeArea()
+            )
         }
     }
-    
-    // --- LÓGICA COMPUTADA ---
-    
-    // Filtrar partidos del último mes (últimos 30 días)
+}
+
+// MARK: - Computed Logic y Subviews
+
+extension InicioView {
     var partidosMes: [Partido] {
         let now = Date()
         return partidos.filter { partido in
-            // Comprobar si es del mismo mes Y año que hoy
-            return Calendar.current.isDate(partido.fecha, equalTo: now, toGranularity: .month) && partido.finalizado
+            Calendar.current.isDate(partido.fecha, equalTo: now, toGranularity: .month) && partido.finalizado
         }
     }
     
     var golesMes: Int {
-        var suma = 0
-        for partido in partidosMes {
-            suma += (partido.golesLocal + partido.golesVisitante)
-        }
-        return suma
+        partidosMes.reduce(0) { $0 + ($1.golesLocal + $1.golesVisitante) }
     }
     
-    // --- GANANCIAS CORREGIDAS (SUMANDO DESPLAZAMIENTO) ---
     var gananciasMes: Double {
         partidosMes.reduce(0.0) { total, p in
-            // 1. Tarifa Base
             let tarifa = p.actuadoComoPrincipal
                 ? (p.categoria?.tarifaPrincipal ?? 0)
                 : (p.categoria?.tarifaAsistente ?? 0)
-            
-            // 2. Desplazamiento
             return total + tarifa + p.costeDesplazamiento
         }
     }
     
     var proximosPartidos: [Partido] {
-        partidos.filter { !$0.finalizado && $0.fecha >= Date().addingTimeInterval(-3600) } // Filtro básicos futuros
+        partidos.filter { !$0.finalizado && $0.fecha >= Date().addingTimeInterval(-3600) }
     }
 }
 
-// Subvista para los datos de la tarjeta naranja
 struct DatoResumenView: View {
     let valor: String
     let etiqueta: String
@@ -153,23 +256,22 @@ struct DatoResumenView: View {
     }
 }
 
-// Celda simplificada para la Home
 struct CeldaResumenInicio: View {
     let partido: Partido
     
     var body: some View {
         HStack(spacing: 0) {
-            // 1. FRANJA DE COLOR (VISUAL IMPACT)
+            // Visual Indicator Strip
             VStack(spacing: 0) {
                 Color(partido.equipoLocal?.colorHex.toColor() ?? .gray)
                 Color(partido.equipoVisitante?.colorVisitanteHex.toColor() ?? .gray)
             }
-            .frame(width: 6) // Franja fina a la izquierda
+            .frame(width: 6)
             
-            // 2. CONTENIDO
+            // Content
             HStack {
                 VStack(alignment: .leading, spacing: 6) {
-                    // CATEGORÍA Y ESTADIO
+                    // Meta: Category & Stadium
                     HStack {
                         Text(partido.categoria?.nombre.uppercased() ?? "AMISTOSO")
                             .font(.caption2)
@@ -188,7 +290,7 @@ struct CeldaResumenInicio: View {
                         .foregroundStyle(.secondary)
                     }
                     
-                    // NOMBRES EQUIPOS (Completos)
+                    // Teams
                     VStack(alignment: .leading, spacing: 2) {
                         Text(partido.equipoLocal?.nombre ?? "Local")
                             .font(.headline)
@@ -207,7 +309,7 @@ struct CeldaResumenInicio: View {
                 
                 Spacer()
                 
-                // FECHA Y HORA (Diseño calendario)
+                // Date & Time Block
                 VStack(alignment: .center, spacing: 2) {
                     Text(partido.fecha.formatted(.dateTime.day()))
                         .font(.title2)
@@ -229,7 +331,7 @@ struct CeldaResumenInicio: View {
         }
         .background(Color(UIColor.secondarySystemGroupedBackground))
         .cornerRadius(12)
-        .clipShape(RoundedRectangle(cornerRadius: 12)) // Para recortar la franja de color
+        .clipShape(RoundedRectangle(cornerRadius: 12))
         .shadow(color: .black.opacity(0.05), radius: 3, x: 0, y: 2)
     }
 }

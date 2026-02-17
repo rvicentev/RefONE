@@ -6,18 +6,16 @@ import Combine
 class GestorHealthKit: NSObject, ObservableObject, CLLocationManagerDelegate {
     static let shared = GestorHealthKit()
     
+    // Services
     let healthStore = HKHealthStore()
-    
-    // 1. CONSTRUCTOR DE DATOS (Calorías, Distancia, BPM)
-    var session: HKWorkoutSession?
-    var builder: HKLiveWorkoutBuilder?
-    
-    // 2. CONSTRUCTOR DE RUTA (Nuevo: Solo para el mapa)
-    var routeBuilder: HKWorkoutRouteBuilder?
-    
     let locationManager = CLLocationManager()
     
-    // Datos en vivo
+    // Workout Session State
+    var session: HKWorkoutSession?
+    var builder: HKLiveWorkoutBuilder?
+    var routeBuilder: HKWorkoutRouteBuilder?
+    
+    // Live Metrics
     @Published var frecuenciaCardiaca: Double = 0
     @Published var distancia: Double = 0
     @Published var calorias: Double = 0
@@ -30,21 +28,30 @@ class GestorHealthKit: NSObject, ObservableObject, CLLocationManagerDelegate {
         super.init()
     }
     
+    // MARK: - Authorization
+    
     func solicitarPermisos() {
-        let heartRate = HKObjectType.quantityType(forIdentifier: .heartRate)!
-        let distance = HKObjectType.quantityType(forIdentifier: .distanceWalkingRunning)!
-        let energy = HKObjectType.quantityType(forIdentifier: .activeEnergyBurned)!
-        let speed = HKObjectType.quantityType(forIdentifier: .runningSpeed)!
-        let steps = HKObjectType.quantityType(forIdentifier: .stepCount)!
+        let typesToShare: Set<HKSampleType> = [
+            HKObjectType.workoutType(),
+            HKSeriesType.workoutRoute()
+        ]
         
-        let workout = HKObjectType.workoutType()
-        let route = HKSeriesType.workoutRoute()
+        let typesToRead: Set<HKObjectType> = [
+            HKObjectType.quantityType(forIdentifier: .heartRate)!,
+            HKObjectType.quantityType(forIdentifier: .distanceWalkingRunning)!,
+            HKObjectType.quantityType(forIdentifier: .activeEnergyBurned)!,
+            HKObjectType.quantityType(forIdentifier: .runningSpeed)!,
+            HKObjectType.quantityType(forIdentifier: .stepCount)!,
+            HKObjectType.workoutType(),
+            HKSeriesType.workoutRoute()
+        ]
         
-        let tipos: Set = [heartRate, distance, energy, speed, steps, workout, route]
-        
-        healthStore.requestAuthorization(toShare: tipos, read: tipos) { success, error in
-            if success { print("✅ Permisos HK autorizados") }
-            else { print("⚠️ Error permisos HK: \(String(describing: error))") }
+        healthStore.requestAuthorization(toShare: typesToShare, read: typesToRead) { success, error in
+            if success {
+                print("HealthKit Authorization: Granted")
+            } else {
+                print("HealthKit Authorization Error: \(String(describing: error))")
+            }
         }
         
         DispatchQueue.main.async {
@@ -54,10 +61,11 @@ class GestorHealthKit: NSObject, ObservableObject, CLLocationManagerDelegate {
         }
     }
     
+    // MARK: - Session Management
+    
     func iniciarEntrenamiento() {
         guard healthKitDisponible else { return }
         
-        // Arrancamos el GPS
         DispatchQueue.main.async {
             self.locationManager.startUpdatingLocation()
         }
@@ -69,8 +77,6 @@ class GestorHealthKit: NSObject, ObservableObject, CLLocationManagerDelegate {
         do {
             session = try HKWorkoutSession(healthStore: healthStore, configuration: configuracion)
             builder = session?.associatedWorkoutBuilder()
-            
-            // Inicializamos el constructor de rutas
             routeBuilder = HKWorkoutRouteBuilder(healthStore: healthStore, device: nil)
             
             builder?.dataSource = HKLiveWorkoutDataSource(healthStore: healthStore, workoutConfiguration: configuracion)
@@ -79,9 +85,10 @@ class GestorHealthKit: NSObject, ObservableObject, CLLocationManagerDelegate {
             session?.startActivity(with: Date())
             builder?.beginCollection(withStart: Date()) { _, _ in }
             
-            print("⚽️ HealthKit arrancado + RouteBuilder listo.")
+            print("HealthKit Session Started. RouteBuilder initialized.")
+            
         } catch {
-            print("❌ Error iniciando HK: \(error)")
+            print("HealthKit Session Start Error: \(error)")
         }
     }
     
@@ -94,7 +101,6 @@ class GestorHealthKit: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
     
     func finalizarEntrenamiento(completion: @escaping (UUID?) -> Void) {
-        // Paramos GPS
         DispatchQueue.main.async {
             self.locationManager.stopUpdatingLocation()
         }
@@ -105,95 +111,99 @@ class GestorHealthKit: NSObject, ObservableObject, CLLocationManagerDelegate {
         }
         
         session.end()
-        builder.endCollection(withEnd: Date()) { _, _ in
+        builder.endCollection(withEnd: Date()) { [weak self] _, _ in
             builder.finishWorkout { workout, error in
+                guard let self = self else { return }
                 
                 guard let workout = workout else {
-                    print("❌ Error guardando workout: \(String(describing: error))")
+                    print("Workout Save Error: \(String(describing: error))")
                     DispatchQueue.main.async { completion(nil) }
                     return
                 }
                 
-                // AQUÍ ESTÁ LA MAGIA: Guardamos la ruta y la unimos al workout
-                self.routeBuilder?.finishRoute(with: workout, metadata: nil) { route, error in
+                // Link Route to Workout
+                self.routeBuilder?.finishRoute(with: workout, metadata: nil) { _, error in
                     if let error = error {
-                        print("⚠️ Error guardando ruta: \(error)")
+                        print("Route Save Error: \(error)")
                     } else {
-                        print("🗺️ Ruta guardada y vinculada al workout.")
+                        print("Route successfully linked to workout.")
                     }
                     
-                    // Devolvemos el UUID al final de todo
                     DispatchQueue.main.async {
-                        self.frecuenciaCardiaca = 0
-                        self.distancia = 0
-                        self.calorias = 0
+                        self.resetMetrics()
                         completion(workout.uuid)
                     }
                 }
             }
         }
     }
+    
+    private func resetMetrics() {
+        self.frecuenciaCardiaca = 0
+        self.distancia = 0
+        self.calorias = 0
+    }
 }
 
-// MARK: - DELEGADO DE DATOS (BPM, CALORÍAS)
+// MARK: - HKLiveWorkoutBuilderDelegate
+
 extension GestorHealthKit: HKLiveWorkoutBuilderDelegate {
     
     func workoutBuilder(_ workoutBuilder: HKLiveWorkoutBuilder, didCollectDataOf collectedTypes: Set<HKSampleType>) {
         for type in collectedTypes {
-            guard let quantityType = type as? HKQuantityType else { continue }
-            guard let statistics = workoutBuilder.statistics(for: quantityType) else { continue }
-            
-            let tipoIdentificador = HKQuantityTypeIdentifier(rawValue: quantityType.identifier)
+            guard let quantityType = type as? HKQuantityType,
+                  let statistics = workoutBuilder.statistics(for: quantityType) else { continue }
             
             DispatchQueue.main.async {
-                switch tipoIdentificador {
-                case .heartRate:
+                switch quantityType.identifier {
+                case HKQuantityTypeIdentifier.heartRate.rawValue:
                     let unit = HKUnit.count().unitDivided(by: HKUnit.minute())
                     self.frecuenciaCardiaca = statistics.mostRecentQuantity()?.doubleValue(for: unit) ?? 0
-                case .distanceWalkingRunning:
+                    
+                case HKQuantityTypeIdentifier.distanceWalkingRunning.rawValue:
                     let unit = HKUnit.meter()
                     self.distancia = statistics.sumQuantity()?.doubleValue(for: unit) ?? 0
-                case .activeEnergyBurned:
+                    
+                case HKQuantityTypeIdentifier.activeEnergyBurned.rawValue:
                     let unit = HKUnit.kilocalorie()
                     self.calorias = statistics.sumQuantity()?.doubleValue(for: unit) ?? 0
+                    
                 default: break
                 }
             }
         }
     }
     
-    func workoutBuilderDidCollectEvent(_ workoutBuilder: HKLiveWorkoutBuilder) { }
+    func workoutBuilderDidCollectEvent(_ workoutBuilder: HKLiveWorkoutBuilder) {
+        // Handle workout events (pause/resume auto-detection) if needed
+    }
 }
 
-// MARK: - DELEGADO GPS (INYECCIÓN MANUAL DE RUTA)
+// MARK: - CLLocationManagerDelegate
+
 extension GestorHealthKit {
     
     func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
         switch status {
-        case .authorizedAlways, .authorizedWhenInUse: print("📍✅ GPS: AUTORIZADO")
+        case .authorizedAlways, .authorizedWhenInUse:
+            print("GPS Access Granted")
         default: break
         }
     }
     
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        // Filtramos coordenadas válidas
         let coordenadasValidas = locations.filter { $0.horizontalAccuracy >= 0 }
-        
         guard !coordenadasValidas.isEmpty else { return }
         
-        // CORRECCIÓN: Usamos routeBuilder en vez de builder
+        // Feed valid GPS data to HealthKit Route Builder
         routeBuilder?.insertRouteData(coordenadasValidas) { success, error in
             if !success {
-                print("⚠️ Error insertando puntos GPS: \(String(describing: error))")
+                print("Route Data Insertion Error: \(String(describing: error))")
             }
-        }
-        
-        if let ultima = coordenadasValidas.last {
-            print("📍 -> HK RouteBuilder: Lat \(ultima.coordinate.latitude)")
         }
     }
     
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        print("📍❌ Error GPS: \(error.localizedDescription)")
+        print("Location Manager Error: \(error.localizedDescription)")
     }
 }
