@@ -14,72 +14,41 @@ struct ListaEquiposView: View {
     var body: some View {
         List {
             ForEach(equipos) { equipo in
-                HStack(spacing: 12) {
-                    // Indicadores visuales de color
-                    HStack(spacing: 0) {
-                        Rectangle()
-                            .fill(equipo.colorHex.toColor())
-                            .frame(width: 4)
-                        Rectangle()
-                            .fill(equipo.colorVisitanteHex.toColor())
-                            .frame(width: 4)
+                // Llamamos a la subvista para que el compilador no sufra
+                EquipoFilaView(equipo: equipo)
+                    // Configuración de lista para efecto bloque flotante
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                    
+                    // Acciones de Celda
+                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                        Button(role: .destructive) {
+                            contexto.delete(equipo)
+                        } label: {
+                            Label("Borrar", systemImage: "trash")
+                        }
+                        
+                        Button {
+                            equipoSeleccionado = equipo
+                        } label: {
+                            Label("Editar", systemImage: "pencil")
+                        }
+                        .tint(.orange)
                     }
-                    .frame(width: 8)
-                    .cornerRadius(2)
-                    .padding(.vertical, 4)
-                    
-                    // Renderizado de escudo
-                    if let data = equipo.escudoData, let uiImage = UIImage(data: data) {
-                        Image(uiImage: uiImage)
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: 40, height: 40)
-                            .clipShape(Circle())
-                            .overlay(Circle().stroke(Color.gray.opacity(0.2), lineWidth: 1))
-                    } else {
-                        Image(systemName: "shield.fill")
-                            .resizable()
-                            .foregroundStyle(.gray.opacity(0.3))
-                            .frame(width: 30, height: 35)
-                            .padding(5)
-                    }
-                    
-                    // Información textual
-                    Text(equipo.nombre)
-                        .font(.headline)
-                        .padding(.leading, 4)
-                    
-                    Spacer()
-                    
-                    // Badge de acrónimo
-                    Text(equipo.acronimo)
-                        .font(.subheadline)
-                        .monospaced()
-                        .foregroundStyle(.gray)
-                        .padding(.horizontal, 8)
-                        .background(Color.gray.opacity(0.1))
-                        .cornerRadius(4)
-                }
-                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                    Button(role: .destructive) {
-                        contexto.delete(equipo)
-                    } label: {
-                        Label("Borrar", systemImage: "trash")
-                    }
-                    
-                    Button {
-                        equipoSeleccionado = equipo
-                    } label: {
-                        Label("Editar", systemImage: "pencil")
-                    }
-                    .tint(.orange)
-                }
             }
         }
+        .listStyle(.plain)
+        .background(Color(UIColor.systemGroupedBackground))
         .navigationTitle("Equipos")
         .toolbar {
-            Button("Crear", systemImage: "plus") {
-                esModoCreacion = true
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    esModoCreacion = true
+                } label: {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.title3)
+                }
             }
         }
         .sheet(isPresented: $esModoCreacion) {
@@ -88,6 +57,99 @@ struct ListaEquiposView: View {
         .sheet(item: $equipoSeleccionado) { equipo in
             FormularioEquipoView(equipoAEditar: equipo)
         }
+        .overlay {
+            if equipos.isEmpty {
+                ContentUnavailableView(
+                    "Sin Equipos",
+                    systemImage: "tshirt",
+                    description: Text("Añade los equipos para poder seleccionarlos en tus partidos.")
+                )
+            }
+        }
+    }
+}
+
+// MARK: - Subvista para la Fila (Soluciona el error de compilación)
+
+struct EquipoFilaView: View {
+    let equipo: Equipo
+    
+    var body: some View {
+        HStack(spacing: 16) {
+            // 1. Escudo del equipo
+            if let data = equipo.escudoData, let uiImage = UIImage(data: data) {
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 50, height: 50)
+                    .clipShape(Circle())
+                    .overlay(Circle().stroke(Color.gray.opacity(0.2), lineWidth: 1))
+                    .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
+            } else {
+                ZStack {
+                    Circle()
+                        .fill(Color.gray.opacity(0.15))
+                        .frame(width: 50, height: 50)
+                    Image(systemName: "shield.fill")
+                        .font(.title2)
+                        .foregroundStyle(.gray.opacity(0.5))
+                }
+            }
+            
+            // 2. Información: Nombre y Colores
+            VStack(alignment: .leading, spacing: 6) {
+                Text(equipo.nombre)
+                    .font(.headline)
+                    .fontWeight(.bold)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                
+                // Equipaciones (Local y Visitante)
+                HStack(spacing: 12) {
+                    // Color Local
+                    HStack(spacing: 4) {
+                        Circle()
+                            .fill(equipo.colorHex.toColor())
+                            .frame(width: 12, height: 12)
+                            .overlay(Circle().stroke(Color.gray.opacity(0.3), lineWidth: 0.5))
+                        Text("L")
+                            .font(.caption2)
+                            .bold()
+                            .foregroundStyle(.secondary)
+                    }
+                    
+                    // Color Visitante
+                    HStack(spacing: 4) {
+                        Circle()
+                            .fill(equipo.colorVisitanteHex.toColor())
+                            .frame(width: 12, height: 12)
+                            .overlay(Circle().stroke(Color.gray.opacity(0.3), lineWidth: 0.5))
+                        Text("V")
+                            .font(.caption2)
+                            .bold()
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+            
+            Spacer()
+            
+            // 3. Badge (Acrónimo)
+            Text(equipo.acronimo)
+                .font(.caption)
+                .bold()
+                .monospaced()
+                .foregroundStyle(.primary)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(Color.gray.opacity(0.15))
+                .clipShape(Capsule())
+        }
+        .padding(.vertical, 12)
+        .padding(.horizontal, 16)
+        .background(Color(UIColor.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(color: Color.black.opacity(0.06), radius: 4, x: 0, y: 2)
     }
 }
 

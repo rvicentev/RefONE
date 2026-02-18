@@ -13,36 +13,77 @@ struct ListaEstadiosView: View {
     var body: some View {
         List {
             ForEach(estadios) { estadio in
-                HStack {
-                    // Información Principal
-                    VStack(alignment: .leading) {
+                // MARK: - BLOQUE DE ESTADIO (TARJETA)
+                VStack(alignment: .leading, spacing: 12) {
+                    
+                    // Fila 1: Nombre y Logo
+                    HStack(alignment: .top) {
                         Text(estadio.nombre)
-                            .font(.headline)
-                        Text(estadio.lugar)
+                            .font(.title3) // Un poco más grande para el bloque
+                            .fontWeight(.bold)
+                        
+                        Spacer()
+                        
+                        Image(systemName: "sportscourt.fill")
+                            .font(.title2)
+                            .foregroundStyle(.green.opacity(0.8)) // Un toque de color césped
+                    }
+                    
+                    // Fila 2: Ubicación
+                    HStack(spacing: 6) {
+                        Image(systemName: "mappin.and.ellipse")
+                            .foregroundStyle(.red.opacity(0.8))
+                        
+                        Text(estadio.lugar.isEmpty ? "Ubicación sin definir" : estadio.lugar)
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
                     
-                    Spacer()
-                    
-                    // Relación: Equipos Locales (Scroll Horizontal)
-                    ScrollView(.horizontal, showsIndicators: false) {
+                    // Fila 3: Equipos Locales
+                    if let equipos = estadio.equiposLocales, !equipos.isEmpty {
+                        // Una línea muy sutil DENTRO de la tarjeta para separar los equipos
+                        Divider()
+                            .padding(.vertical, 2)
+                        
                         HStack {
-                            if let equipos = estadio.equiposLocales {
-                                ForEach(equipos) { equipo in
-                                    Text(equipo.acronimo)
-                                        .font(.caption)
-                                        .bold()
-                                        .padding(4)
-                                        .background(Color.gray.opacity(0.1))
-                                        .foregroundStyle(.gray)
-                                        .cornerRadius(4)
+                            Text("Equipos:")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 8) {
+                                    ForEach(equipos) { equipo in
+                                        Text(equipo.acronimo)
+                                            .font(.caption2)
+                                            .bold()
+                                            .padding(.horizontal, 10)
+                                            .padding(.vertical, 4)
+                                            .background(Color.blue.opacity(0.15))
+                                            .foregroundStyle(.blue)
+                                            .clipShape(Capsule())
+                                    }
                                 }
                             }
                         }
+                    } else {
+                        // Estado vacío para equipos
+                        Text("Ningún equipo local vinculado")
+                            .font(.caption)
+                            .italic()
+                            .foregroundStyle(.tertiary)
+                            .padding(.top, 2)
                     }
-                    .frame(maxWidth: 100, alignment: .trailing)
                 }
+                .padding() // Padding interior de la tarjeta
+                .background(Color(UIColor.secondarySystemGroupedBackground)) // Color de fondo adaptable (claro/oscuro)
+                .clipShape(RoundedRectangle(cornerRadius: 16)) // Bordes muy redondeados
+                .shadow(color: Color.black.opacity(0.06), radius: 5, x: 0, y: 2) // Sombra sutil
+                // 👇 Modificadores clave para convertir la lista en bloques
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16)) // Separación entre los bloques
+                
+                // MARK: - Acciones de Celda
                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                     Button(role: .destructive) {
                         contexto.delete(estadio)
@@ -59,17 +100,35 @@ struct ListaEstadiosView: View {
                 }
             }
         }
-        .navigationTitle("Estadios")
+        .listStyle(.plain) // Quitamos el estilo por defecto para que los bloques destaquen
+        .background(Color(UIColor.systemGroupedBackground)) // Fondo gris clarito detrás de las tarjetas
+        .navigationTitle("Campos y Estadios")
         .toolbar {
-            Button("Crear", systemImage: "plus") {
-                esModoCreacion = true
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    esModoCreacion = true
+                } label: {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.title3)
+                }
             }
         }
         .sheet(isPresented: $esModoCreacion) {
             FormularioEstadioView(estadioAEditar: nil)
+                .presentationDetents([.medium, .large])
         }
         .sheet(item: $estadioSeleccionado) { estadio in
             FormularioEstadioView(estadioAEditar: estadio)
+                .presentationDetents([.medium, .large])
+        }
+        .overlay {
+            if estadios.isEmpty {
+                ContentUnavailableView(
+                    "Sin Estadios",
+                    systemImage: "sportscourt",
+                    description: Text("Aún no has añadido ningún campo a tu base de datos.")
+                )
+            }
         }
     }
 }
@@ -77,33 +136,36 @@ struct ListaEstadiosView: View {
 // MARK: - Formulario Estadio
 
 struct FormularioEstadioView: View {
-    // Inyección de dependencias
     @Environment(\.modelContext) private var contexto
     @Environment(\.dismiss) private var cerrar
     
-    // Parámetro de entrada (Opcional para edición)
     var estadioAEditar: Estadio?
     
-    // Estado local
     @State private var nombre: String = ""
     @State private var lugar: String = ""
     
     var body: some View {
         NavigationStack {
             Form {
-                Section("Datos del Estadio") {
-                    TextField("Nombre (Ej: Camp Nou)", text: $nombre)
-                    TextField("Lugar (Ej: Barcelona)", text: $lugar)
+                Section {
+                    TextField("Nombre (Ej: Nuevo Vivero)", text: $nombre)
+                    TextField("Ubicación (Ej: Badajoz)", text: $lugar)
+                } header: {
+                    Text("Datos del Campo")
+                } footer: {
+                    Text("Añade el nombre del recinto y la localidad donde se encuentra.")
                 }
             }
-            .navigationTitle(estadioAEditar == nil ? "Nuevo Estadio" : "Editar Estadio")
+            .navigationTitle(estadioAEditar == nil ? "Nuevo Campo" : "Editar Campo")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancelar") { cerrar() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Guardar") { guardar() }
-                        .disabled(nombre.isEmpty)
+                        .disabled(nombre.trimmingCharacters(in: .whitespaces).isEmpty)
+                        .bold()
                 }
             }
             .onAppear {
@@ -117,11 +179,9 @@ struct FormularioEstadioView: View {
     
     private func guardar() {
         if let estadio = estadioAEditar {
-            // Update flow
             estadio.nombre = nombre
             estadio.lugar = lugar
         } else {
-            // Create flow
             let nuevoEstadio = Estadio(nombre: nombre, lugar: lugar)
             contexto.insert(nuevoEstadio)
         }
