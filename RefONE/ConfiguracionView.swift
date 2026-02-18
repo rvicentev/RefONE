@@ -55,7 +55,7 @@ struct ConfiguracionView: View {
                 }
                 
                 // MARK: - NOTIFICACIONES (DESPLEGABLE)
-                Section("Notificaciones") {
+                Section(footer: Text("Elige cuando quieres que se te notifique antes de un partido")) {
                     DisclosureGroup {
                         ForEach(opcionesRecordatorio, id: \.value) { opcion in
                             Toggle(opcion.label, isOn: Binding(
@@ -92,20 +92,20 @@ struct ConfiguracionView: View {
                     }
                 }
                 
-                // MARK: - SALUD Y RENDIMIENTO
-                Section("Salud y Rendimiento") {
-                    VStack(alignment: .leading) {
-                        Text("Frecuencia Cardíaca Máxima (FC Max)")
-                            .font(.caption).foregroundStyle(.secondary)
-                        HStack {
-                            Text("\(Int(fcMax)) bpm")
-                                .font(.title3).bold().foregroundStyle(.red)
-                            Slider(value: $fcMax, in: 150...220, step: 1)
+                // MARK: - SALUD Y RENDIMIENTO (DESPLEGABLE)
+                Section(footer: Text("Ajusta los valores de la frecuencia cardiaca y zonas de esfuerzo")) {
+                    DisclosureGroup {
+                        VStack(alignment: .leading) {
+                            Text("Frecuencia Cardíaca Máxima")
+                                .font(.caption).foregroundStyle(.secondary)
+                            HStack {
+                                Text("\(Int(fcMax)) bpm")
+                                    .font(.title3).bold().foregroundStyle(.red)
+                                Slider(value: $fcMax, in: 150...220, step: 1)
+                            }
                         }
-                    }
-                    .padding(.vertical, 4)
-                    
-                    DisclosureGroup("Configurar Intervalos de Zonas") {
+                        .padding(.vertical, 4)
+                        
                         VStack(spacing: 15) {
                             Text("Ajusta el límite superior de cada zona (% de FC Max).")
                                 .font(.caption2).foregroundStyle(.secondary)
@@ -124,7 +124,20 @@ struct ConfiguracionView: View {
                             }
                             .font(.caption).bold()
                         }
-                        .padding(.top, 10)
+                        .padding(.vertical, 4)
+                        
+                    } label: {
+                        HStack {
+                            Image(systemName: "heart.fill")
+                                .foregroundStyle(.red)
+                            Text("Salud y Rendimiento")
+                                .foregroundStyle(.primary)
+                            Spacer()
+                            // Resumen cuando está cerrado
+                            Text("\(Int(fcMax)) bpm")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
                 
