@@ -83,6 +83,9 @@ struct VistaJuegoActivo: View {
     @State private var colorEquipoGol: Color = .black
     @State private var minutoGol: Int = 0
     
+    // 👇 NUEVO ESTADO PARA CONFIRMAR EL FINAL
+    @State private var mostrarConfirmacionFin = false
+    
     // Computed Metrics
     var duracionParteSegundos: Double { Double(partido.duracionParteMinutos * 60) }
     var duracionDescansoSegundos: Double { Double(partido.duracionDescansoMinutos * 60) }
@@ -154,6 +157,25 @@ struct VistaJuegoActivo: View {
             if value.translation.width < 0 { anotarGol(esLocal: false) }
             if value.translation.width > 0 { anotarGol(esLocal: true) }
         })
+        
+        // 👇 AÑADIDO: DIÁLOGO DE CONFIRMACIÓN PARA FINALIZAR PARTE/PARTIDO
+        .confirmationDialog(
+            estado == .primeraParte ? "¿Finalizar la primera parte?" : "¿Finalizar el partido?",
+            isPresented: $mostrarConfirmacionFin,
+            titleVisibility: .visible
+        ) {
+            Button("Sí, finalizar", role: .destructive) {
+                if estado == .primeraParte {
+                    finalizarParte()
+                } else if estado == .segundaParte {
+                    finalizarPartido()
+                }
+            }
+            Button("Cancelar", role: .cancel) {
+                // No hacemos nada, el diálogo se cierra solo y el partido sigue
+            }
+        }
+        
         .overlay {
             if mostrarGolOverlay {
                 ZStack {
@@ -283,8 +305,9 @@ struct VistaJuegoActivo: View {
                 .frame(width: 45, height: 45)
                 .clipShape(Circle())
                 
+                // 👇 CAMBIO: AHORA EL BOTÓN LEVANTA LA CONFIRMACIÓN EN LUGAR DE CORTAR EL PARTIDO DIRECTO
                 Button {
-                    if estado == .primeraParte { finalizarParte() } else { finalizarPartido() }
+                    mostrarConfirmacionFin = true
                 } label: {
                     Image(systemName: "flag.checkered").font(.title3)
                 }
